@@ -26,7 +26,8 @@ public class Project {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private ProjectType type;
-    
+
+    @Column(scale = 2)
     private BigDecimal unitPrice;
     
     @Enumerated(EnumType.STRING)

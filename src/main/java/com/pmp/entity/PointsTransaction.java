@@ -25,7 +25,8 @@ public class PointsTransaction {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private TransactionType type;
-    
+
+    @Column(nullable = false)
     private Integer amount;
     
     private String description;

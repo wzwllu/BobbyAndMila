@@ -1,5 +1,6 @@
 package com.pmp.repository;
 
+import com.pmp.entity.Project;
 import com.pmp.entity.ProjectAssignment;
 import com.pmp.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;

@@ -35,4 +35,10 @@ public class ProjectAssignment {
     
     @Column(name = "completed_quantity")
     private Integer completedQuantity;
+
+    @PrePersist
+    protected void onCreate() {
+        status = AssignmentStatus.ACTIVE;
+        completedQuantity = 0;
+    }
 }

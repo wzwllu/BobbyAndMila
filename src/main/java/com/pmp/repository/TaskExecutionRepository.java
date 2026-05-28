@@ -30,11 +30,11 @@ public interface TaskExecutionRepository extends JpaRepository<TaskExecution, Lo
      * 计算工作端用户获得的总积分
      */
     @Query("SELECT COALESCE(SUM(te.pointsEarned), 0) FROM TaskExecution te WHERE te.assignment.worker = :worker")
-    Integer sumPointsEarnedByWorker(@Param("worker") User worker);
+    Long sumPointsEarnedByWorker(@Param("worker") User worker);
 
     /**
      * 计算工作端用户消耗的总积分
      */
     @Query("SELECT COALESCE(SUM(te.pointsConsumed), 0) FROM TaskExecution te WHERE te.assignment.worker = :worker")
-    Integer sumPointsConsumedByWorker(@Param("worker") User worker);
+    Long sumPointsConsumedByWorker(@Param("worker") User worker);
 }

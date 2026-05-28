@@ -4,7 +4,7 @@ A Spring Boot-based project management system built with Java.
 
 ## Tech Stack
 
-- **Java 17**
+- **Java 8**
 - **Spring Boot 2.7.18**
 - **Spring Data JPA**
 - **H2 Database** (in-memory file-based storage)
@@ -25,7 +25,7 @@ pmp/
 
 ### Prerequisites
 
-- Java 17 or higher
+- Java 8 or higher
 - Maven 3.6 or higher
 
 ### Build the Project

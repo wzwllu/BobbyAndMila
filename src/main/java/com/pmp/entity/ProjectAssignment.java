@@ -4,6 +4,7 @@ import com.pmp.enumeration.AssignmentStatus;
 import lombok.Data;
 
 import javax.persistence.*;
+import java.time.LocalDate;
 
 /**
  * 项目分配实体类

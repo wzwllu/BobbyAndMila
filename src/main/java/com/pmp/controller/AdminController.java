@@ -1,7 +1,6 @@
 package com.pmp.controller;
 
 import com.pmp.dto.*;
-import com.pmp.enumeration.Role;
 import com.pmp.service.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
@@ -96,12 +95,31 @@ public class AdminController {
     }
 
     /**
-     * 获取用户统计数据
+     * 用户统计页面
      */
     @GetMapping("/users/{id}/stats")
+    public String userStats(@PathVariable Long id, Model model) {
+        model.addAttribute("user", userService.getUserById(id));
+        model.addAttribute("stats", userService.getUserStats(id));
+        return "admin/stats";
+    }
+
+    /**
+     * 获取用户按天统计数据（JSON）
+     */
+    @GetMapping("/users/{id}/stats/daily")
     @ResponseBody
-    public UserStatsResponse getUserStats(@PathVariable Long id) {
-        return userService.getUserStats(id);
+    public List<DailyStatsResponse> getDailyStats(@PathVariable Long id) {
+        return userService.getDailyStats(id);
+    }
+
+    /**
+     * 获取用户按任务统计数据（JSON）
+     */
+    @GetMapping("/users/{id}/stats/tasks")
+    @ResponseBody
+    public List<TaskStatsResponse> getTaskStats(@PathVariable Long id) {
+        return userService.getTaskStats(id);
     }
 
     /**

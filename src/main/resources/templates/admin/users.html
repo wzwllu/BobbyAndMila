@@ -174,9 +174,8 @@
                             <td th:text="${user.role.label}"></td>
                             <td th:text="${#temporals.format(user.createdAt, 'yyyy-MM-dd HH:mm')}"></td>
                             <td>
-                                <button class="action-btn detail-btn"
-                                        th:attr="data-user-id=${user.id}, data-username=${user.username}"
-                                        onclick="showStatsModal(this)">详情</button>
+                                <a class="action-btn detail-btn" style="text-decoration:none;"
+                                   th:href="@{'/admin/users/' + ${user.id} + '/stats'}">详情</a>
                                 <button class="action-btn cancel-btn-small" th:if="${user.role.name() != 'ADMIN'}"
                                         th:attr="data-user-id=${user.id}, data-username=${user.username}"
                                         onclick="showPwdModal(this)">修改密码</button>

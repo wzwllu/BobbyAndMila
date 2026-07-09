@@ -1,7 +1,9 @@
 package com.pmp.service;
 
+import com.pmp.dto.DailyStatsResponse;
 import com.pmp.dto.LoginRequest;
 import com.pmp.dto.LoginResponse;
+import com.pmp.dto.TaskStatsResponse;
 import com.pmp.dto.UserRequest;
 import com.pmp.dto.UserResponse;
 import com.pmp.dto.UserStatsResponse;
@@ -161,6 +163,38 @@ public class UserService implements UserDetailsService {
         stats.setTotalConsumed(pointsTransactionRepository.sumConsumedByUser(user));
         stats.setBalance(stats.getTotalEarned() - stats.getTotalConsumed());
         return stats;
+    }
+
+    /**
+     * 获取用户按天统计
+     */
+    public List<DailyStatsResponse> getDailyStats(Long userId) {
+        List<Object[]> rows = taskExecutionRepository.findDailyStatsByUserId(userId);
+        return rows.stream().map(r -> {
+            DailyStatsResponse d = new DailyStatsResponse();
+            d.setDate((java.time.LocalDate) r[0]);
+            d.setCompletedCount(((Number) r[1]).longValue());
+            d.setEarnedPoints(((Number) r[2]).longValue());
+            d.setConsumedPoints(((Number) r[3]).longValue());
+            return d;
+        }).collect(java.util.stream.Collectors.toList());
+    }
+
+    /**
+     * 获取用户按任务统计
+     */
+    public List<TaskStatsResponse> getTaskStats(Long userId) {
+        List<Object[]> rows = taskExecutionRepository.findTaskStatsByUserId(userId);
+        return rows.stream().map(r -> {
+            TaskStatsResponse t = new TaskStatsResponse();
+            t.setProjectId(((Number) r[0]).longValue());
+            t.setProjectName((String) r[1]);
+            t.setProjectType(r[2] != null ? r[2].toString() : "");
+            t.setCompletedCount(((Number) r[3]).longValue());
+            t.setIncompleteCount(((Number) r[4]).longValue());
+            t.setTotalPoints(((Number) r[5]).longValue());
+            return t;
+        }).collect(java.util.stream.Collectors.toList());
     }
 
     /**

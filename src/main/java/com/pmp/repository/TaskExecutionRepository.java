@@ -46,6 +46,29 @@ public interface TaskExecutionRepository extends JpaRepository<TaskExecution, Lo
     Long countIncompleteByUserId(@Param("userId") Long userId);
 
     /**
+     * 按执行日期分组统计用户每天的任务情况
+     */
+    @Query("SELECT te.executionDate, " +
+           "COUNT(te), " +
+           "COALESCE(SUM(CASE WHEN te.type = 'EARN' AND te.status = 'APPROVED' THEN te.points ELSE 0 END), 0), " +
+           "COALESCE(SUM(CASE WHEN te.type = 'CONSUME' AND te.status = 'APPROVED' THEN te.points ELSE 0 END), 0) " +
+           "FROM TaskExecution te WHERE te.assignment.user.id = :userId " +
+           "GROUP BY te.executionDate ORDER BY te.executionDate DESC")
+    List<Object[]> findDailyStatsByUserId(@Param("userId") Long userId);
+
+    /**
+     * 按任务分组统计用户的任务情况
+     */
+    @Query("SELECT te.assignment.project.id, te.assignment.project.name, te.assignment.project.type, " +
+           "COALESCE(SUM(CASE WHEN te.status = 'APPROVED' THEN 1 ELSE 0 END), 0), " +
+           "COALESCE(SUM(CASE WHEN te.status IN ('PENDING', 'REJECTED') THEN 1 ELSE 0 END), 0), " +
+           "COALESCE(SUM(CASE WHEN te.status = 'APPROVED' THEN te.points ELSE 0 END), 0) " +
+           "FROM TaskExecution te WHERE te.assignment.user.id = :userId " +
+           "GROUP BY te.assignment.project.id, te.assignment.project.name, te.assignment.project.type " +
+           "ORDER BY te.assignment.project.name")
+    List<Object[]> findTaskStatsByUserId(@Param("userId") Long userId);
+
+    /**
      * 根据项目ID删除该项目下的所有任务执行记录
      */
     @Modifying

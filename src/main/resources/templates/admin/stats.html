@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>用户统计 - 大宝小宝积分系统</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f5f6fa; }
+        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px 30px; display: flex; justify-content: space-between; align-items: center; }
+        .nav-links a { color: white; text-decoration: none; margin-left: 20px; font-size: 14px; }
+        .container { max-width: 1200px; margin: 30px auto; padding: 0 20px; }
+        .summary-cards { display: grid; grid-template-columns: repeat(5, 1fr); gap: 15px; margin-bottom: 30px; }
+        .card { background: white; border-radius: 10px; padding: 20px; text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .card .num { font-size: 28px; font-weight: bold; }
+        .card .label { color: #555; font-size: 13px; margin-top: 5px; }
+        .card-green .num { color: #27ae60; }
+        .card-red .num { color: #e74c3c; }
+        .card-blue .num { color: #2196f3; }
+        .card-orange .num { color: #ff9800; }
+        .card-purple .num { color: #9c27b0; }
+        .tabs { display: flex; gap: 2px; margin-bottom: 20px; }
+        .tab { padding: 12px 24px; background: #e0e0e0; border: none; border-radius: 8px 8px 0 0; cursor: pointer; font-size: 14px; font-weight: 500; }
+        .tab.active { background: white; color: #667eea; }
+        .section { background: white; border-radius: 0 10px 10px 10px; padding: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); display: none; }
+        .section.active { display: block; }
+        .section h3 { color: #667eea; margin-bottom: 15px; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #e0e0e0; }
+        th { background: #f8f9fa; color: #555; font-weight: 500; }
+        tr:hover { background: #f8f9fa; }
+        .empty-message { text-align: center; color: #999; padding: 20px; }
+        .tag-earn { background: #e8f5e9; color: #27ae60; padding: 3px 10px; border-radius: 10px; font-size: 12px; }
+        .tag-consume { background: #fdecea; color: #e74c3c; padding: 3px 10px; border-radius: 10px; font-size: 12px; }
+        .loading { text-align: center; color: #999; padding: 20px; }
+        .back-btn { text-decoration: none; color: white; margin-left: 20px; font-size: 14px; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>用户统计 - <span th:text="${user.username}"></span></h1>
+        <div class="nav-links">
+            <a href="/admin/users" class="back-btn">← 返回用户列表</a>
+            <a href="/admin">返回首页</a>
+            <a href="/logout">退出登录</a>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="summary-cards">
+            <div class="card card-green">
+                <div class="num" th:text="${stats.completedTasks}">0</div>
+                <div class="label">已完成任务</div>
+            </div>
+            <div class="card card-red">
+                <div class="num" th:text="${stats.incompleteTasks}">0</div>
+                <div class="label">未完成任务</div>
+            </div>
+            <div class="card card-blue">
+                <div class="num" th:text="${stats.totalEarned}">0</div>
+                <div class="label">获得积分</div>
+            </div>
+            <div class="card card-orange">
+                <div class="num" th:text="${stats.totalConsumed}">0</div>
+                <div class="label">消耗积分</div>
+            </div>
+            <div class="card card-purple">
+                <div class="num" th:text="${stats.balance}">0</div>
+                <div class="label">当前余额</div>
+            </div>
+        </div>
+
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('daily')">按天统计</button>
+            <button class="tab" onclick="switchTab('tasks')">按任务统计</button>
+            <button class="tab" onclick="switchTab('transactions')">交易记录</button>
+        </div>
+
+        <div id="tab-daily" class="section active">
+            <h3>每日统计</h3>
+            <div id="dailyLoading" class="loading">加载中...</div>
+            <table id="dailyTable" style="display:none;">
+                <thead>
+                    <tr>
+                        <th>日期</th>
+                        <th>完成任务数</th>
+                        <th>获得积分</th>
+                        <th>消耗积分</th>
+                    </tr>
+                </thead>
+                <tbody id="dailyBody"></tbody>
+            </table>
+            <div id="dailyEmpty" class="empty-message" style="display:none;">暂无数据</div>
+        </div>
+
+        <div id="tab-tasks" class="section">
+            <h3>按任务统计</h3>
+            <div id="tasksLoading" class="loading">加载中...</div>
+            <table id="tasksTable" style="display:none;">
+                <thead>
+                    <tr>
+                        <th>任务名称</th>
+                        <th>类型</th>
+                        <th>已完成</th>
+                        <th>未完成</th>
+                        <th>总积分</th>
+                    </tr>
+                </thead>
+                <tbody id="tasksBody"></tbody>
+            </table>
+            <div id="tasksEmpty" class="empty-message" style="display:none;">暂无数据</div>
+        </div>
+
+        <div id="tab-transactions" class="section">
+            <h3>积分交易记录</h3>
+            <div id="txLoading" class="loading">加载中...</div>
+            <table id="txTable" style="display:none;">
+                <thead>
+                    <tr>
+                        <th>时间</th>
+                        <th>类型</th>
+                        <th>积分数</th>
+                        <th>描述</th>
+                    </tr>
+                </thead>
+                <tbody id="txBody"></tbody>
+            </table>
+            <div id="txEmpty" class="empty-message" style="display:none;">暂无数据</div>
+        </div>
+    </div>
+
+    <script>
+        var userId = [[${user.id}]];
+
+        function switchTab(name) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+            document.querySelector('.tab[onclick="switchTab(\'' + name + '\')"]').classList.add('active');
+            document.getElementById('tab-' + name).classList.add('active');
+
+            if (name === 'daily' && !window._dailyLoaded) { loadDaily(); window._dailyLoaded = true; }
+            if (name === 'tasks' && !window._tasksLoaded) { loadTasks(); window._tasksLoaded = true; }
+            if (name === 'transactions' && !window._txLoaded) { loadTransactions(); window._txLoaded = true; }
+        }
+
+        function loadDaily() {
+            fetch('/admin/users/' + userId + '/stats/daily')
+                .then(r => r.json())
+                .then(data => {
+                    document.getElementById('dailyLoading').style.display = 'none';
+                    var tbody = document.getElementById('dailyBody');
+                    if (!data || data.length === 0) {
+                        document.getElementById('dailyEmpty').style.display = 'block';
+                        return;
+                    }
+                    document.getElementById('dailyTable').style.display = '';
+                    data.forEach(function(d) {
+                        var tr = document.createElement('tr');
+                        tr.innerHTML = '<td>' + d.date + '</td>'
+                            + '<td>' + d.completedCount + '</td>'
+                            + '<td style="color:#27ae60;">+' + d.earnedPoints + '</td>'
+                            + '<td style="color:#e74c3c;">-' + d.consumedPoints + '</td>';
+                        tbody.appendChild(tr);
+                    });
+                });
+        }
+
+        function loadTasks() {
+            fetch('/admin/users/' + userId + '/stats/tasks')
+                .then(r => r.json())
+                .then(data => {
+                    document.getElementById('tasksLoading').style.display = 'none';
+                    var tbody = document.getElementById('tasksBody');
+                    if (!data || data.length === 0) {
+                        document.getElementById('tasksEmpty').style.display = 'block';
+                        return;
+                    }
+                    document.getElementById('tasksTable').style.display = '';
+                    data.forEach(function(t) {
+                        var tr = document.createElement('tr');
+                        var typeTag = t.projectType === 'EARN'
+                            ? '<span class="tag-earn">增加积分</span>'
+                            : '<span class="tag-consume">消耗积分</span>';
+                        tr.innerHTML = '<td>' + t.projectName + '</td>'
+                            + '<td>' + typeTag + '</td>'
+                            + '<td>' + t.completedCount + '</td>'
+                            + '<td>' + t.incompleteCount + '</td>'
+                            + '<td>' + t.totalPoints + '</td>';
+                        tbody.appendChild(tr);
+                    });
+                });
+        }
+
+        function loadTransactions() {
+            fetch('/admin/users/' + userId + '/stats/daily')
+                .then(r => r.json())
+                .then(data => {
+                    document.getElementById('txLoading').style.display = 'none';
+                    var tbody = document.getElementById('txBody');
+                    document.getElementById('txEmpty').style.display = 'block';
+                    document.getElementById('txEmpty').textContent = '交易记录请前往「积分管理」页面查看';
+                });
+        }
+
+        loadDaily();
+        window._dailyLoaded = true;
+    </script>
+</body>
+</html>

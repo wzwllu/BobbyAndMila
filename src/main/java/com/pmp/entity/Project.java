@@ -1,6 +1,7 @@
 package com.pmp.entity;
 
 import com.pmp.enumeration.ProjectType;
+import com.pmp.enumeration.ProjectStatus;
 import com.pmp.enumeration.RepeatType;
 import lombok.Data;
 
@@ -26,6 +27,10 @@ public class Project {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private ProjectType type;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private ProjectStatus status = ProjectStatus.ACTIVE;
 
     @Column(scale = 2)
     private BigDecimal unitPrice;

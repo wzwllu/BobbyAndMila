@@ -7,6 +7,7 @@ import java.time.LocalDate;
 @Data
 public class AssignmentRequest {
     private Long projectId;
-    private Long workerId;
-    private LocalDate assignDate;
+    private Long userId;
+    private LocalDate startDate;
+    private LocalDate endDate;
 }

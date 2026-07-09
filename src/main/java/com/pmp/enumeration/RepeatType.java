@@ -10,15 +10,21 @@ public enum RepeatType {
     /**
      * 不重复
      */
-    NONE,
-    
+    NONE("不重复"),
+
     /**
      * 每日重复
      */
-    DAILY,
-    
+    DAILY("每日"),
+
     /**
      * 每周重复
      */
-    WEEKLY
+    WEEKLY("每周");
+
+    private final String label;
+
+    RepeatType(String label) {
+        this.label = label;
+    }
 }

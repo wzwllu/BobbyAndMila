@@ -5,6 +5,7 @@ import lombok.Data;
 
 import javax.persistence.*;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 /**
  * 项目分配实体类
@@ -21,24 +22,30 @@ public class ProjectAssignment {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "project_id", nullable = false)
     private Project project;
-    
+
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "worker_id", nullable = false)
-    private User worker;
-    
-    @Column(name = "assign_date", nullable = false)
-    private LocalDate assignDate;
-    
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
+
+    @Column(name = "start_date")
+    private LocalDate startDate;
+
+    @Column(name = "end_date")
+    private LocalDate endDate;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private AssignmentStatus status;
-    
-    @Column(name = "completed_quantity")
-    private Integer completedQuantity;
+
+    @Column(name = "created_by")
+    private Long createdBy;
+
+    @Column(name = "created_at")
+    private LocalDateTime createdAt;
 
     @PrePersist
     protected void onCreate() {
+        createdAt = LocalDateTime.now();
         status = AssignmentStatus.ACTIVE;
-        completedQuantity = 0;
     }
 }

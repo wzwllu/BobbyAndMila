@@ -21,21 +21,46 @@ public interface AssignmentRepository extends JpaRepository<ProjectAssignment, L
     /**
      * 查找工作端用户在指定日期的所有分配
      */
-    List<ProjectAssignment> findByWorkerAndAssignDate(User worker, LocalDate assignDate);
+    List<ProjectAssignment> findByUserAndStartDate(User user, LocalDate startDate);
 
     /**
      * 查找工作端用户在指定日期的特定项目分配
      */
-    Optional<ProjectAssignment> findByWorkerAndProjectAndAssignDate(User worker, Project project, LocalDate assignDate);
+    Optional<ProjectAssignment> findByUserAndProjectAndStartDate(User user, Project project, LocalDate startDate);
 
     /**
      * 查找指定日期的活跃分配
      */
-    @Query("SELECT pa FROM ProjectAssignment pa WHERE pa.assignDate = :date AND pa.status = 'ACTIVE'")
+    @Query("SELECT pa FROM ProjectAssignment pa WHERE pa.startDate = :date AND pa.status = 'ACTIVE'")
     List<ProjectAssignment> findActiveAssignmentsByDate(@Param("date") LocalDate date);
 
     /**
      * 查找工作端用户的所有分配
      */
-    List<ProjectAssignment> findByWorker(User worker);
+    List<ProjectAssignment> findByUser(User user);
+
+    /**
+     * 根据用户ID查找分配
+     */
+    List<ProjectAssignment> findByUser_Id(Long userId);
+
+    /**
+     * 根据用户ID和项目ID查找分配
+     */
+    Optional<ProjectAssignment> findByUser_IdAndProject_Id(Long userId, Long projectId);
+
+    /**
+     * 根据项目ID删除该项目下的所有分配
+     */
+    void deleteByProject_Id(Long projectId);
+
+    /**
+     * 判断用户是否存在指定状态的分配
+     */
+    boolean existsByUser_IdAndStatus(Long userId, com.pmp.enumeration.AssignmentStatus status);
+
+    /**
+     * 判断用户是否存在指定项目的活跃分配
+     */
+    boolean existsByUser_IdAndProject_IdAndStatus(Long userId, Long projectId, com.pmp.enumeration.AssignmentStatus status);
 }

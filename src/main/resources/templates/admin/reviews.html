@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>审核中心 - 大宝小宝积分系统</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f5f6fa; }
+        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px 30px; display: flex; justify-content: space-between; align-items: center; }
+        .nav-links a { color: white; text-decoration: none; margin-left: 20px; font-size: 14px; }
+        .container { max-width: 1200px; margin: 30px auto; padding: 0 20px; }
+        .section { background: white; border-radius: 10px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .section h3 { color: #667eea; margin-bottom: 15px; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #e0e0e0; }
+        th { background: #f8f9fa; color: #555; font-weight: 500; }
+        tr:hover { background: #f8f9fa; }
+        .btn { padding: 6px 14px; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 13px; }
+        .btn-approve { background: #27ae60; }
+        .btn-reject { background: #e74c3c; }
+        .tag-earn { background: #e8f5e9; color: #27ae60; padding: 3px 10px; border-radius: 10px; font-size: 12px; }
+        .tag-consume { background: #fdecea; color: #e74c3c; padding: 3px 10px; border-radius: 10px; font-size: 12px; }
+        .empty-message { text-align: center; color: #999; padding: 20px; }
+        .badge { background: #e74c3c; color: white; border-radius: 10px; padding: 1px 7px; font-size: 12px; margin-left: 6px; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>审核中心</h1>
+        <div class="nav-links">
+            <a href="/admin">返回首页</a>
+            <a href="/logout">退出登录</a>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="section">
+            <h3>任务申请审核<span class="badge" th:text="${pendingApplications.size()}"></span></h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>任务名称</th>
+                        <th>类型</th>
+                        <th>积分规则</th>
+                        <th>重复</th>
+                        <th>申请人</th>
+                        <th>申请时间</th>
+                        <th>备注</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:if="${pendingApplications.isEmpty()}">
+                        <td colspan="8" class="empty-message">暂无待审核的申请</td>
+                    </tr>
+                    <tr th:each="app : ${pendingApplications}">
+                        <td th:text="${app.projectName}"></td>
+                        <td>
+                            <span th:if="${app.projectType.name() == 'EARN'}" class="tag-earn" th:text="${app.projectType.label}">增加积分</span>
+                            <span th:if="${app.projectType.name() == 'CONSUME'}" class="tag-consume" th:text="${app.projectType.label}">消耗积分</span>
+                        </td>
+                        <td th:text="${app.projectType.name() == 'EARN' ? (app.unitPrice != null ? '每单位 ' + app.unitPrice + ' 积分' : '') : (app.pointsToConsume != null ? '固定消耗 ' + app.pointsToConsume + ' 积分' : '')}"></td>
+                        <td th:text="${app.repeatType != null ? app.repeatType.label : ''}"></td>
+                        <td th:text="${app.user.username}"></td>
+                        <td th:text="${#temporals.format(app.createdAt, 'yyyy-MM-dd HH:mm')}"></td>
+                        <td th:text="${app.remark}"></td>
+                        <td>
+                            <button class="btn btn-approve" th:attr="data-id=${app.id}" onclick="approveApplication(this)">通过</button>
+                            <button class="btn btn-reject" th:attr="data-id=${app.id}" onclick="rejectApplication(this)">拒绝</button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="section">
+            <h3>任务积分审核<span class="badge" th:text="${pendingTasks.size()}"></span></h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>项目</th>
+                        <th>工人</th>
+                        <th>类型</th>
+                        <th>积分</th>
+                        <th>数量</th>
+                        <th>提交时间</th>
+                        <th>备注</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:if="${pendingTasks.isEmpty()}">
+                        <td colspan="8" class="empty-message">暂无待审核的任务</td>
+                    </tr>
+                    <tr th:each="task : ${pendingTasks}">
+                        <td th:text="${task.assignment.project.name}"></td>
+                        <td th:text="${task.assignment.user.username}"></td>
+                        <td>
+                            <span th:if="${task.type.name() == 'EARN'}" class="tag-earn" th:text="${task.type.label}">赚取</span>
+                            <span th:if="${task.type.name() == 'CONSUME'}" class="tag-consume" th:text="${task.type.label}">消耗</span>
+                        </td>
+                        <td th:text="${task.points}"></td>
+                        <td th:text="${task.quantity}"></td>
+                        <td th:text="${#temporals.format(task.createdAt, 'yyyy-MM-dd HH:mm')}"></td>
+                        <td th:text="${task.remark}"></td>
+                        <td>
+                            <button class="btn btn-approve" th:attr="data-id=${task.id}" onclick="approveTask(this)">通过</button>
+                            <button class="btn btn-reject" th:attr="data-id=${task.id}" onclick="rejectTask(this)">拒绝</button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        function postAndReload(url) {
+            fetch(url, { method: 'POST' })
+                .then(response => response.json())
+                .then(data => {
+                    alert(data.message || '操作成功');
+                    if (data.success) location.reload();
+                })
+                .catch(() => alert('操作失败'));
+        }
+        function approveApplication(btn) { postAndReload('/admin/reviews/application/' + btn.getAttribute('data-id') + '/approve'); }
+        function rejectApplication(btn) { postAndReload('/admin/reviews/application/' + btn.getAttribute('data-id') + '/reject'); }
+        function approveTask(btn) { postAndReload('/admin/reviews/task/' + btn.getAttribute('data-id') + '/approve'); }
+        function rejectTask(btn) { postAndReload('/admin/reviews/task/' + btn.getAttribute('data-id') + '/reject'); }
+    </script>
+</body>
+</html>

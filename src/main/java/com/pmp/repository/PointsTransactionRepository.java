@@ -31,4 +31,10 @@ public interface PointsTransactionRepository extends JpaRepository<PointsTransac
      */
     @Query("SELECT COALESCE(SUM(pt.amount), 0) FROM PointsTransaction pt WHERE pt.user = :user AND pt.type = 'CONSUME'")
     Long sumConsumedByUser(@Param("user") User user);
+
+    /**
+     * 计算用户积分余额
+     */
+    @Query("SELECT COALESCE(SUM(CASE WHEN pt.type = 'EARN' THEN pt.amount ELSE -pt.amount END), 0) FROM PointsTransaction pt WHERE pt.user.id = :userId")
+    Long sumPointsByUserId(@Param("userId") Long userId);
 }

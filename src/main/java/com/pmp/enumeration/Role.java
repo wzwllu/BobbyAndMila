@@ -10,10 +10,16 @@ public enum Role {
     /**
      * 管理员
      */
-    ADMIN,
-    
+    ADMIN("管理员"),
+
     /**
      * 工人
      */
-    WORKER
+    WORKER("工人");
+
+    private final String label;
+
+    Role(String label) {
+        this.label = label;
+    }
 }

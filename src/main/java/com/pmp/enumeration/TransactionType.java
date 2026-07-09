@@ -10,10 +10,16 @@ public enum TransactionType {
     /**
      * 获得积分
      */
-    EARN,
-    
+    EARN("赚取"),
+
     /**
      * 消耗积分
      */
-    CONSUME
+    CONSUME("消耗");
+
+    private final String label;
+
+    TransactionType(String label) {
+        this.label = label;
+    }
 }

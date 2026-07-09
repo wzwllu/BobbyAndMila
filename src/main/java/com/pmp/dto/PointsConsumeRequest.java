@@ -6,4 +6,5 @@ import lombok.Data;
 public class PointsConsumeRequest {
     private Long projectId;
     private Integer quantity;
+    private String remark;
 }

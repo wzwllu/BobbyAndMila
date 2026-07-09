@@ -10,10 +10,21 @@ public enum AssignmentStatus {
     /**
      * 进行中
      */
-    ACTIVE,
-    
+    ACTIVE("进行中"),
+
     /**
      * 已完成
      */
-    COMPLETED
+    COMPLETED("已完成"),
+
+    /**
+     * 已取消
+     */
+    CANCELLED("已取消");
+
+    private final String label;
+
+    AssignmentStatus(String label) {
+        this.label = label;
+    }
 }

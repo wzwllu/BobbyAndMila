@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>任务分配 - 大宝小宝积分系统</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f5f6fa; }
+        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px 30px; display: flex; justify-content: space-between; align-items: center; }
+        .header h1 { font-size: 24px; }
+        .nav-links a { color: white; text-decoration: none; margin-left: 20px; font-size: 14px; }
+        .container { max-width: 1200px; margin: 30px auto; padding: 0 20px; }
+        .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .btn { padding: 10px 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 14px; }
+        .table-container { background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 15px; text-align: left; border-bottom: 1px solid #e0e0e0; }
+        th { background: #667eea; color: white; font-weight: 500; }
+        tr:hover { background: #f8f9fa; }
+        .action-btn { padding: 5px 10px; border: none; border-radius: 3px; cursor: pointer; font-size: 12px; }
+        .cancel-btn-small { background: #e74c3c; color: white; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); z-index: 1000; justify-content: center; align-items: center; }
+        .modal-content { background: white; padding: 30px; border-radius: 10px; width: 100%; max-width: 500px; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; color: #555; }
+        .form-group input, .form-group select { width: 100%; padding: 10px; border: 2px solid #e0e0e0; border-radius: 5px; }
+        .modal-buttons { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
+        .cancel-btn { background: #95a5a6; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; }
+        .status-active { color: #27ae60; font-weight: 500; }
+        .status-completed { color: #7f8c8d; }
+        .status-cancelled { color: #e74c3c; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>任务分配</h1>
+        <div class="nav-links">
+            <a href="/admin">返回首页</a>
+            <a href="/logout">退出登录</a>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="page-header">
+            <h2>分配列表</h2>
+            <button class="btn" onclick="showModal()">新建分配</button>
+        </div>
+
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>项目名称</th>
+                        <th>工作人员</th>
+                        <th>开始日期</th>
+                        <th>结束日期</th>
+                        <th>状态</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="assignment : ${assignments}">
+                        <td th:text="${assignment.id}"></td>
+                        <td th:text="${assignment.projectName}"></td>
+                        <td th:text="${assignment.userName}"></td>
+                        <td th:text="${assignment.startDate}"></td>
+                        <td th:text="${assignment.endDate}"></td>
+                        <td>
+                            <span th:class="${assignment.status.name() == 'ACTIVE' ? 'status-active' : (assignment.status.name() == 'COMPLETED' ? 'status-completed' : 'status-cancelled')}"
+                                  th:text="${assignment.status.label}"></span>
+                        </td>
+                        <td>
+                            <button class="action-btn cancel-btn-small"
+                                    th:if="${assignment.status.name() == 'ACTIVE'}"
+                                    th:attr="data-assignment-id=${assignment.id}" onclick="cancelAssignment(this)">取消分配</button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="assignModal" class="modal">
+        <div class="modal-content">
+            <h3 style="margin-bottom: 20px;">新建分配</h3>
+            <form id="assignForm">
+                <div class="form-group">
+                    <label>项目</label>
+                    <select name="projectId" required>
+                        <option value="">请选择项目</option>
+                        <option th:each="project : ${projects}" th:value="${project.id}" th:text="${project.name}"></option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>工作人员</label>
+                    <select name="userId" required>
+                        <option value="">请选择用户</option>
+                        <option th:each="user : ${users}" th:value="${user.id}" th:text="${user.username}"></option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>开始日期</label>
+                    <input type="date" name="startDate" required>
+                </div>
+                <div class="form-group">
+                    <label>结束日期</label>
+                    <input type="date" name="endDate">
+                </div>
+                <div class="modal-buttons">
+                    <button type="button" class="cancel-btn" onclick="hideModal()">取消</button>
+                    <button type="submit" class="btn">保存</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function showModal() {
+            document.getElementById('assignModal').style.display = 'flex';
+        }
+
+        function hideModal() {
+            document.getElementById('assignModal').style.display = 'none';
+        }
+
+        document.getElementById('assignForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            const data = {
+                projectId: parseInt(formData.get('projectId')),
+                userId: parseInt(formData.get('userId')),
+                startDate: formData.get('startDate'),
+                endDate: formData.get('endDate') || null
+            };
+
+            fetch('/admin/assignments', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            }).then(response => {
+                if (response.ok) {
+                    location.reload();
+                } else {
+                    response.json().then(err => alert(err.message || '分配失败'));
+                }
+            });
+        });
+
+        function cancelAssignment(btn) {
+            var id = btn.getAttribute('data-assignment-id');
+            if (confirm('确定要取消此分配吗?')) {
+                fetch('/admin/assignments/' + id + '/cancel', {
+                    method: 'PUT'
+                }).then(response => {
+                    if (response.ok) {
+                        location.reload();
+                    }
+                });
+            }
+        }
+    </script>
+</body>
+</html>

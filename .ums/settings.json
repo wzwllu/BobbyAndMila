@@ -1,7 +1,19 @@
 {
   "permissions": {
     "allow": [
-      "Bash(mkdir *)"
+      "Bash(mkdir *)",
+      "Bash(mvn *)",
+      "Bash(dir *)",
+      "Bash(d *)",
+      "Bash(@echo *)",
+      "Bash(findstr *)",
+      "Bash(java *)",
+      "Bash(type *)",
+      "Bash(@for *)",
+      "Bash(\"%i\\*.jar\")",
+      "Bash(do *)",
+      "Bash(where *)"
     ]
-  }
+  },
+  "$version": 3
 }

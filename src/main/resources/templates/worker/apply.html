@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>申请任务 - 大宝小宝积分系统</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f5f6fa; }
+        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px 30px; display: flex; justify-content: space-between; align-items: center; }
+        .nav-links a { color: white; text-decoration: none; margin-left: 20px; font-size: 14px; }
+        .container { max-width: 700px; margin: 30px auto; padding: 0 20px; }
+        .form-card { background: white; border-radius: 10px; padding: 30px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 30px; }
+        .form-card h3 { color: #667eea; margin-bottom: 20px; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; color: #555; font-weight: 500; }
+        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 10px; border: 2px solid #e0e0e0; border-radius: 5px; font-family: inherit; }
+        .form-group textarea { resize: vertical; }
+        .btn { padding: 12px 30px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; width: 100%; }
+        .section { background: white; border-radius: 10px; padding: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .section h3 { color: #667eea; margin-bottom: 15px; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #e0e0e0; }
+        th { background: #f8f9fa; color: #555; font-weight: 500; }
+        tr:hover { background: #f8f9fa; }
+        .tag-earn { background: #e8f5e9; color: #27ae60; padding: 3px 10px; border-radius: 10px; font-size: 12px; }
+        .tag-consume { background: #fdecea; color: #e74c3c; padding: 3px 10px; border-radius: 10px; font-size: 12px; }
+        .status-pending { color: #f39c12; font-weight: 500; }
+        .status-approved { color: #27ae60; font-weight: 500; }
+        .status-rejected { color: #e74c3c; font-weight: 500; }
+        .empty-message { text-align: center; color: #999; padding: 20px; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>申请任务</h1>
+        <div class="nav-links">
+            <a href="/worker">返回首页</a>
+            <a href="/logout">退出登录</a>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="form-card">
+            <h3>创建新任务提案</h3>
+            <p style="color: #888; margin-bottom: 20px;">提交任务提案，管理员审核通过后任务将自动创建并分配给你</p>
+            <form id="applyForm">
+                <div class="form-group">
+                    <label>任务名称</label>
+                    <input type="text" name="name" required>
+                </div>
+                <div class="form-group">
+                    <label>任务类型</label>
+                    <select name="type" id="typeSelect" required>
+                        <option value="EARN">增加积分</option>
+                        <option value="CONSUME">消耗积分</option>
+                    </select>
+                </div>
+                <div class="form-group" id="earnFields">
+                    <label>单价（每次完成可得积分）</label>
+                    <input type="number" name="unitPrice" min="1" step="1">
+                </div>
+                <div class="form-group" id="consumeFields" style="display:none;">
+                    <label>消耗积分（每次消耗的积分数）</label>
+                    <input type="number" name="pointsToConsume" min="1" step="1">
+                </div>
+                <div class="form-group">
+                    <label>重复方式</label>
+                    <select name="repeatType">
+                        <option value="DAILY">每日</option>
+                        <option value="WEEKLY">每周</option>
+                        <option value="NONE">不重复</option>
+                    </select>
+                </div>
+                <div class="form-group" id="repeatDayGroup" style="display:none;">
+                    <label>每周重复日（1-7，周一到周日）</label>
+                    <input type="number" name="repeatDay" min="1" max="7">
+                </div>
+                <div class="form-group">
+                    <label>申请备注</label>
+                    <textarea name="remark" rows="3" placeholder="请说明为什么创建这个任务"></textarea>
+                </div>
+                <button type="submit" class="btn">提交申请</button>
+            </form>
+        </div>
+
+        <div class="section">
+            <h3>我的申请记录</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>任务名称</th>
+                        <th>类型</th>
+                        <th>申请时间</th>
+                        <th>状态</th>
+                        <th>备注</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:if="${myApplications.isEmpty()}">
+                        <td colspan="5" class="empty-message">暂无申请记录</td>
+                    </tr>
+                    <tr th:each="app : ${myApplications}">
+                        <td th:text="${app.projectName}"></td>
+                        <td>
+                            <span th:if="${app.projectType.name() == 'EARN'}" class="tag-earn" th:text="${app.projectType.label}">增加积分</span>
+                            <span th:if="${app.projectType.name() == 'CONSUME'}" class="tag-consume" th:text="${app.projectType.label}">消耗积分</span>
+                        </td>
+                        <td th:text="${#temporals.format(app.createdAt, 'yyyy-MM-dd HH:mm')}"></td>
+                        <td th:class="${app.status.name() == 'APPROVED' ? 'status-approved' : (app.status.name() == 'REJECTED' ? 'status-rejected' : 'status-pending')}"
+                            th:text="${app.status != null ? app.status.label : ''}"></td>
+                        <td th:text="${app.remark}"></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('typeSelect').addEventListener('change', function() {
+            const isEarn = this.value === 'EARN';
+            document.getElementById('earnFields').style.display = isEarn ? 'block' : 'none';
+            document.getElementById('consumeFields').style.display = isEarn ? 'none' : 'block';
+        });
+
+        document.querySelector('select[name="repeatType"]').addEventListener('change', function() {
+            document.getElementById('repeatDayGroup').style.display =
+                this.value === 'WEEKLY' ? 'block' : 'none';
+        });
+
+        document.getElementById('applyForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            const data = {
+                name: formData.get('name'),
+                type: formData.get('type'),
+                unitPrice: formData.get('unitPrice') ? parseInt(formData.get('unitPrice')) : null,
+                repeatType: formData.get('repeatType'),
+                repeatDay: formData.get('repeatDay') ? parseInt(formData.get('repeatDay')) : null,
+                pointsToConsume: formData.get('pointsToConsume') ? parseInt(formData.get('pointsToConsume')) : null,
+                remark: formData.get('remark')
+            };
+
+            fetch('/worker/apply/submit', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            }).then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(data.message);
+                    location.reload();
+                } else {
+                    alert('操作失败: ' + data.message);
+                }
+            });
+        });
+    </script>
+</body>
+</html>

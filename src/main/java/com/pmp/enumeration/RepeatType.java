@@ -7,20 +7,8 @@ import lombok.Getter;
  */
 @Getter
 public enum RepeatType {
-    /**
-     * 不重复
-     */
     NONE("不重复"),
-
-    /**
-     * 每日重复
-     */
-    DAILY("每日"),
-
-    /**
-     * 每周重复
-     */
-    WEEKLY("每周");
+    DAILY("每日");
 
     private final String label;
 

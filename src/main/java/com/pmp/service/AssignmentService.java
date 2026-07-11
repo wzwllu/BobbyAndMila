@@ -11,6 +11,8 @@ import com.pmp.repository.AssignmentRepository;
 import com.pmp.repository.ProjectRepository;
 import com.pmp.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -74,6 +76,10 @@ public class AssignmentService {
                 .collect(Collectors.toList());
     }
 
+    public Page<AssignmentResponse> getAllAssignments(Pageable pageable) {
+        return assignmentRepository.findAll(pageable).map(this::convertToResponse);
+    }
+
     /**
      * 取消分配
      */
@@ -93,6 +99,7 @@ public class AssignmentService {
         response.setProjectType(assignment.getProject().getType());
         response.setUnitPrice(assignment.getProject().getUnitPrice());
         response.setPointsToConsume(assignment.getProject().getPointsToConsume());
+        response.setRepeatType(assignment.getProject().getRepeatType());
         response.setUserId(assignment.getUser().getId());
         response.setUserName(assignment.getUser().getUsername());
         response.setStartDate(assignment.getStartDate());

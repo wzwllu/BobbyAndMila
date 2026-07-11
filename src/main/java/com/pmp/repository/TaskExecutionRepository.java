@@ -3,12 +3,15 @@ package com.pmp.repository;
 import com.pmp.entity.TaskExecution;
 import com.pmp.enumeration.TaskExecutionStatus;
 import com.pmp.enumeration.TransactionType;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDate;
 import java.util.List;
 
 /**
@@ -23,15 +26,27 @@ public interface TaskExecutionRepository extends JpaRepository<TaskExecution, Lo
     @Query("SELECT te FROM TaskExecution te WHERE te.assignment.user.id = :userId ORDER BY te.executionDate DESC")
     List<TaskExecution> findTaskExecutionsByUserId(@Param("userId") Long userId);
 
+    @Query("SELECT te FROM TaskExecution te WHERE te.assignment.user.id = :userId ORDER BY te.executionDate DESC")
+    Page<TaskExecution> findTaskExecutionsByUserId(@Param("userId") Long userId, Pageable pageable);
+
     /**
      * 根据用户ID和任务方向查找任务执行记录（工人端按赚取/消耗分页展示）
      */
     List<TaskExecution> findByAssignment_User_IdAndTypeOrderByExecutionDateDesc(Long userId, TransactionType type);
 
+    Page<TaskExecution> findByAssignment_User_IdAndTypeOrderByExecutionDateDesc(Long userId, TransactionType type, Pageable pageable);
+
+    /**
+     * 根据用户ID和执行日期查找任务执行记录
+     */
+    List<TaskExecution> findByAssignment_User_IdAndExecutionDateOrderByExecutionDateDesc(Long userId, LocalDate executionDate);
+
     /**
      * 按审核状态查找任务执行记录（管理端审核列表）
      */
     List<TaskExecution> findByStatus(TaskExecutionStatus status);
+
+    Page<TaskExecution> findByStatus(TaskExecutionStatus status, Pageable pageable);
 
     /**
      * 统计用户已完成的任务数（审核通过）
@@ -67,6 +82,17 @@ public interface TaskExecutionRepository extends JpaRepository<TaskExecution, Lo
            "GROUP BY te.assignment.project.id, te.assignment.project.name, te.assignment.project.type " +
            "ORDER BY te.assignment.project.name")
     List<Object[]> findTaskStatsByUserId(@Param("userId") Long userId);
+
+    /**
+     * 查询指定分配在某天是否有完成记录
+     */
+    @Query("SELECT COUNT(te) > 0 FROM TaskExecution te WHERE te.assignment.id = :assignmentId AND te.executionDate = :executionDate")
+    boolean existsByAssignmentIdAndExecutionDate(@Param("assignmentId") Long assignmentId, @Param("executionDate") java.time.LocalDate executionDate);
+
+    /**
+     * 查询指定分配的所有完成记录
+     */
+    List<TaskExecution> findByAssignmentIdOrderByExecutionDateDesc(Long assignmentId);
 
     /**
      * 根据项目ID删除该项目下的所有任务执行记录

@@ -15,6 +15,8 @@ import com.pmp.repository.AssignmentRepository;
 import com.pmp.repository.ProjectRepository;
 import com.pmp.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -67,7 +69,7 @@ public class ApplicationService {
         application.setProjectType(request.getType());
         application.setUnitPrice(request.getUnitPrice());
         application.setRepeatType(request.getRepeatType());
-        application.setRepeatDay(request.getRepeatDay());
+        application.setEndDate(request.getEndDate());
         application.setPointsToConsume(request.getPointsToConsume());
         application.setRemark(request.getRemark());
         application.setStatus(ApplicationStatus.PENDING);
@@ -81,11 +83,19 @@ public class ApplicationService {
         return applicationRepository.findByStatus(ApplicationStatus.PENDING);
     }
 
+    public Page<Application> listPending(Pageable pageable) {
+        return applicationRepository.findByStatus(ApplicationStatus.PENDING, pageable);
+    }
+
     /**
      * 获取指定用户的全部申请
      */
     public List<Application> getMyApplications(Long userId) {
         return applicationRepository.findByUserId(userId);
+    }
+
+    public Page<Application> getMyApplications(Long userId, Pageable pageable) {
+        return applicationRepository.findByUserId(userId, pageable);
     }
 
     /**
@@ -106,7 +116,7 @@ public class ApplicationService {
         project.setType(application.getProjectType());
         project.setUnitPrice(application.getUnitPrice());
         project.setRepeatType(application.getRepeatType());
-        project.setRepeatDay(application.getRepeatDay());
+        project.setEndDate(application.getEndDate());
         project.setPointsToConsume(application.getPointsToConsume());
         project.setStatus(ProjectStatus.ACTIVE);
         project.setCreatedBy(application.getUser().getId());
@@ -117,6 +127,7 @@ public class ApplicationService {
         assignmentRequest.setProjectId(project.getId());
         assignmentRequest.setUserId(application.getUser().getId());
         assignmentRequest.setStartDate(LocalDate.now());
+        assignmentRequest.setEndDate(application.getEndDate());
         assignmentService.assignProject(assignmentRequest, application.getUser().getId());
 
         application.setStatus(ApplicationStatus.APPROVED);

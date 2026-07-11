@@ -181,7 +181,7 @@
                 </tr>
             </thead>
             <tbody>
-                <tr th:each="project : ${projects}">
+                <tr th:each="project : ${projects.content}">
                     <td th:text="${project.id}"></td>
                     <td th:text="${project.name}"></td>
                     <td th:text="${project.type.label}"></td>
@@ -196,6 +196,7 @@
                 </tr>
             </tbody>
             </table>
+            <div th:replace="fragments/pagination :: pagination(${projects}, '/admin/projects', '')"></div>
         </div>
     </div>
 
@@ -224,15 +225,14 @@
                 </div>
                 <div class="form-group">
                     <label>重复方式</label>
-                    <select name="repeatType">
+                    <select name="repeatType" id="repeatTypeSelect">
                         <option value="DAILY">每日</option>
-                        <option value="WEEKLY">每周</option>
                         <option value="NONE">不重复</option>
                     </select>
                 </div>
-                <div class="form-group" id="repeatDayGroup" style="display:none;">
-                    <label>每周重复日（1-7，周一到周日）</label>
-                    <input type="number" name="repeatDay" min="1" max="7">
+                <div class="form-group" id="endDateGroup" style="display:none;">
+                    <label>截止日期（不重复任务需在此日期前完成）</label>
+                    <input type="date" name="endDate">
                 </div>
                 <div class="modal-buttons">
                     <button type="button" class="cancel-btn" onclick="hideModal()">取消</button>
@@ -245,7 +245,7 @@
     <script>
         function showModal() {
             document.getElementById('projectModal').style.display = 'flex';
-            document.getElementById('repeatDayGroup').style.display = 'none';
+            document.getElementById('endDateGroup').style.display = 'none';
             document.getElementById('typeSelect').value = 'EARN';
             document.getElementById('earnFields').style.display = 'block';
             document.getElementById('consumeFields').style.display = 'none';
@@ -261,9 +261,9 @@
             document.getElementById('consumeFields').style.display = isEarn ? 'none' : 'block';
         });
 
-        document.querySelector('select[name="repeatType"]').addEventListener('change', function() {
-            document.getElementById('repeatDayGroup').style.display =
-                this.value === 'WEEKLY' ? 'block' : 'none';
+        document.getElementById('repeatTypeSelect').addEventListener('change', function() {
+            document.getElementById('endDateGroup').style.display =
+                this.value === 'NONE' ? 'block' : 'none';
         });
 
         document.getElementById('projectForm').addEventListener('submit', function(e) {
@@ -274,7 +274,7 @@
                 type: formData.get('type'),
                 unitPrice: formData.get('unitPrice') ? parseInt(formData.get('unitPrice')) : null,
                 repeatType: formData.get('repeatType'),
-                repeatDay: formData.get('repeatDay') ? parseInt(formData.get('repeatDay')) : null,
+                endDate: formData.get('endDate') || null,
                 pointsToConsume: formData.get('pointsToConsume') ? parseInt(formData.get('pointsToConsume')) : null
             };
 

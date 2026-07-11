@@ -3,17 +3,23 @@ package com.pmp.controller;
 import com.pmp.dto.*;
 import com.pmp.enumeration.AssignmentStatus;
 import com.pmp.enumeration.ProjectType;
+import com.pmp.enumeration.RepeatType;
 import com.pmp.service.*;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+
+import org.springframework.format.annotation.DateTimeFormat;
 
 /**
  * 工作端控制器
@@ -49,13 +55,32 @@ public class WorkerController {
      * 赚取积分任务页面（仅显示增加积分类、进行中的分配）
      */
     @GetMapping("/tasks")
-    public String tasks(Authentication authentication, Model model) {
+    public String tasks(Authentication authentication, Model model,
+                        @RequestParam(defaultValue = "0") int page,
+                        @RequestParam(defaultValue = "10") int size) {
         Long userId = getUserId(authentication);
         List<AssignmentResponse> earnAssignments = assignmentService.getUserAssignments(userId).stream()
                 .filter(a -> a.getStatus() == AssignmentStatus.ACTIVE && a.getProjectType() == ProjectType.EARN)
                 .collect(Collectors.toList());
         model.addAttribute("assignments", earnAssignments);
-        model.addAttribute("earnTasks", taskService.getEarnTasks(userId));
+
+        Map<Long, String> completionStatus = new HashMap<>();
+        for (AssignmentResponse a : earnAssignments) {
+            if (a.getRepeatType() == RepeatType.DAILY) {
+                completionStatus.put(a.getId(), taskService.isCompletedToday(a.getId()) ? "completed" : "pending");
+            } else {
+                boolean hasDone = taskService.hasCompletionRecords(a.getId());
+                if (a.getEndDate() != null && a.getEndDate().isBefore(java.time.LocalDate.now()) && !hasDone) {
+                    completionStatus.put(a.getId(), "expired");
+                } else if (hasDone) {
+                    completionStatus.put(a.getId(), "completed");
+                } else {
+                    completionStatus.put(a.getId(), "pending");
+                }
+            }
+        }
+        model.addAttribute("completionStatus", completionStatus);
+        model.addAttribute("earnTasks", taskService.getEarnTasks(userId, PageRequest.of(page, size)));
         return "worker/tasks";
     }
 
@@ -79,13 +104,32 @@ public class WorkerController {
      * 消耗积分任务页面（仅显示消耗积分类、进行中的分配）
      */
     @GetMapping("/consume")
-    public String consume(Authentication authentication, Model model) {
+    public String consume(Authentication authentication, Model model,
+                          @RequestParam(defaultValue = "0") int page,
+                          @RequestParam(defaultValue = "10") int size) {
         Long userId = getUserId(authentication);
         List<AssignmentResponse> consumeAssignments = assignmentService.getUserAssignments(userId).stream()
                 .filter(a -> a.getStatus() == AssignmentStatus.ACTIVE && a.getProjectType() == ProjectType.CONSUME)
                 .collect(Collectors.toList());
         model.addAttribute("assignments", consumeAssignments);
-        model.addAttribute("consumeTasks", taskService.getConsumeTasks(userId));
+
+        Map<Long, String> completionStatus = new HashMap<>();
+        for (AssignmentResponse a : consumeAssignments) {
+            if (a.getRepeatType() == RepeatType.DAILY) {
+                completionStatus.put(a.getId(), taskService.isCompletedToday(a.getId()) ? "completed" : "pending");
+            } else {
+                boolean hasDone = taskService.hasCompletionRecords(a.getId());
+                if (a.getEndDate() != null && a.getEndDate().isBefore(java.time.LocalDate.now()) && !hasDone) {
+                    completionStatus.put(a.getId(), "expired");
+                } else if (hasDone) {
+                    completionStatus.put(a.getId(), "completed");
+                } else {
+                    completionStatus.put(a.getId(), "pending");
+                }
+            }
+        }
+        model.addAttribute("completionStatus", completionStatus);
+        model.addAttribute("consumeTasks", taskService.getConsumeTasks(userId, PageRequest.of(page, size)));
         return "worker/consume";
     }
 
@@ -100,7 +144,7 @@ public class WorkerController {
 
         Map<String, Object> response = new HashMap<>();
         response.put("success", true);
-        response.put("message", "消耗申请已提交，等待审核");
+        response.put("message", "消耗成功");
         response.put("balance", taskService.getUserPointsBalance(userId));
         return response;
     }
@@ -109,10 +153,20 @@ public class WorkerController {
      * 申请任务页面（工人提交新任务提案）
      */
     @GetMapping("/apply")
-    public String apply(Authentication authentication, Model model) {
+    public String apply(Authentication authentication, Model model,
+                        @RequestParam(defaultValue = "0") int page,
+                        @RequestParam(defaultValue = "10") int size) {
         Long userId = getUserId(authentication);
-        model.addAttribute("myApplications", applicationService.getMyApplications(userId));
+        model.addAttribute("myApplications", applicationService.getMyApplications(userId, PageRequest.of(page, size)));
         return "worker/apply";
+    }
+
+    /**
+     * 创建新任务提案页面
+     */
+    @GetMapping("/apply/new")
+    public String applyNew() {
+        return "worker/apply-new";
     }
 
     /**
@@ -134,13 +188,13 @@ public class WorkerController {
      * 积分明细页面
      */
     @GetMapping("/points")
-    public String points(Authentication authentication, Model model) {
+    public String points(Authentication authentication, Model model,
+                         @RequestParam(defaultValue = "0") int page,
+                         @RequestParam(defaultValue = "10") int size) {
         Long userId = getUserId(authentication);
         Long balance = taskService.getUserPointsBalance(userId);
         model.addAttribute("balance", balance);
-        model.addAttribute("transactions", taskService.getAllTransactions().stream()
-                .filter(t -> t.getUser().getId().equals(userId))
-                .collect(Collectors.toList()));
+        model.addAttribute("transactions", taskService.getUserTransactionsPage(userId, PageRequest.of(page, size)));
         return "worker/points";
     }
 
@@ -154,5 +208,44 @@ public class WorkerController {
         Map<String, Long> response = new HashMap<>();
         response.put("balance", taskService.getUserPointsBalance(userId));
         return response;
+    }
+
+    /**
+     * 获取当前用户积分交易记录（支持过滤）
+     */
+    @GetMapping("/points/transactions")
+    @ResponseBody
+    public Map<String, Object> getTransactions(
+            @RequestParam(required = false) String type,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+            @RequestParam(required = false) String keyword,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            Authentication authentication) {
+        Long userId = getUserId(authentication);
+        List<Map<String, Object>> items = taskService.getUserTransactions(userId, type, startDate, endDate, keyword).stream()
+                .map(tx -> {
+                    Map<String, Object> m = new HashMap<>();
+                    m.put("type", tx.getType().name());
+                    m.put("typeLabel", tx.getType().getLabel());
+                    m.put("description", tx.getDescription());
+                    m.put("amount", tx.getAmount());
+                    m.put("createdAt", tx.getCreatedAt() != null ?
+                            tx.getCreatedAt().format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")) : "");
+                    return m;
+                })
+                .collect(Collectors.toList());
+        int total = items.size();
+        int fromIndex = Math.min(page * size, total);
+        int toIndex = Math.min((page + 1) * size, total);
+        List<Map<String, Object>> pageItems = items.subList(fromIndex, toIndex);
+        Map<String, Object> result = new HashMap<>();
+        result.put("content", pageItems);
+        result.put("totalElements", total);
+        result.put("totalPages", (total + size - 1) / size);
+        result.put("number", page);
+        result.put("size", size);
+        return result;
     }
 }

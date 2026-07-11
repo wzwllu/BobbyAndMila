@@ -36,7 +36,7 @@
 
     <div class="container">
         <div class="section">
-            <h3>任务申请审核<span class="badge" th:text="${pendingApplications.size()}"></span></h3>
+            <h3>任务申请审核<span class="badge" th:text="${pendingApplications.totalElements}"></span></h3>
             <table>
                 <thead>
                     <tr>
@@ -51,10 +51,10 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <tr th:if="${pendingApplications.isEmpty()}">
+                    <tr th:if="${pendingApplications.totalElements == 0}">
                         <td colspan="8" class="empty-message">暂无待审核的申请</td>
                     </tr>
-                    <tr th:each="app : ${pendingApplications}">
+                    <tr th:each="app : ${pendingApplications.content}">
                         <td th:text="${app.projectName}"></td>
                         <td>
                             <span th:if="${app.projectType.name() == 'EARN'}" class="tag-earn" th:text="${app.projectType.label}">增加积分</span>
@@ -72,10 +72,11 @@
                     </tr>
                 </tbody>
             </table>
+            <div th:replace="fragments/pagination :: pagination(${pendingApplications}, '/admin/reviews', '')"></div>
         </div>
 
         <div class="section">
-            <h3>任务积分审核<span class="badge" th:text="${pendingTasks.size()}"></span></h3>
+            <h3>任务积分审核<span class="badge" th:text="${pendingTasks.totalElements}"></span></h3>
             <table>
                 <thead>
                     <tr>
@@ -90,10 +91,10 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <tr th:if="${pendingTasks.isEmpty()}">
+                    <tr th:if="${pendingTasks.totalElements == 0}">
                         <td colspan="8" class="empty-message">暂无待审核的任务</td>
                     </tr>
-                    <tr th:each="task : ${pendingTasks}">
+                    <tr th:each="task : ${pendingTasks.content}">
                         <td th:text="${task.assignment.project.name}"></td>
                         <td th:text="${task.assignment.user.username}"></td>
                         <td>
@@ -111,6 +112,7 @@
                     </tr>
                 </tbody>
             </table>
+            <div th:replace="fragments/pagination :: pagination(${pendingTasks}, '/admin/reviews', '')"></div>
         </div>
     </div>
 

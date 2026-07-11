@@ -7,6 +7,7 @@ import lombok.Data;
 
 import javax.persistence.*;
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 /**
@@ -38,7 +39,8 @@ public class Project {
     @Enumerated(EnumType.STRING)
     private RepeatType repeatType;
     
-    private Integer repeatDay;
+    @Column(name = "end_date")
+    private LocalDate endDate;
     
     @Column(name = "points_to_consume")
     private Integer pointsToConsume;

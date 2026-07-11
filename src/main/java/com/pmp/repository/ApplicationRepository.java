@@ -2,6 +2,8 @@ package com.pmp.repository;
 
 import com.pmp.entity.Application;
 import com.pmp.enumeration.ApplicationStatus;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -21,10 +23,15 @@ public interface ApplicationRepository extends JpaRepository<Application, Long> 
     @Query("SELECT a FROM Application a WHERE a.user.id = :userId ORDER BY a.createdAt DESC")
     List<Application> findByUserId(@Param("userId") Long userId);
 
+    @Query("SELECT a FROM Application a WHERE a.user.id = :userId ORDER BY a.createdAt DESC")
+    Page<Application> findByUserId(@Param("userId") Long userId, Pageable pageable);
+
     /**
      * 按审核状态查找申请（管理端审核列表）
      */
     List<Application> findByStatus(ApplicationStatus status);
+
+    Page<Application> findByStatus(ApplicationStatus status, Pageable pageable);
 
     /**
      * 判断用户是否存在待审核的申请（防止重复提交）

@@ -16,6 +16,8 @@ import com.pmp.repository.AssignmentRepository;
 import com.pmp.repository.PointsTransactionRepository;
 import com.pmp.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,6 +25,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * 任务执行服务类
@@ -76,7 +79,7 @@ public class TaskService {
     }
 
     /**
-     * 提交消耗积分申请（审核通过后入账）
+     * 提交消耗积分（直接扣除，无需审核）
      */
     @Transactional
     public void submitConsume(PointsConsumeRequest request, Long userId) {
@@ -95,6 +98,26 @@ public class TaskService {
         }
         Integer points = unitPoints * request.getQuantity();
 
+        // 检查余额是否充足
+        Long balance = getUserPointsBalance(userId);
+        if (balance < points) {
+            throw new BusinessException("INSUFFICIENT_BALANCE", "积分余额不足，当前余额: " + balance + "，需要: " + points);
+        }
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new BusinessException("USER_NOT_FOUND", "用户不存在"));
+
+        // 直接创建积分交易记录（立即扣除）
+        PointsTransaction transaction = new PointsTransaction();
+        transaction.setUser(user);
+        transaction.setAssignment(assignment);
+        transaction.setAmount(points);
+        transaction.setType(TransactionType.CONSUME);
+        transaction.setDescription("消耗积分: " + assignment.getProject().getName());
+        transaction.setCreatedAt(LocalDateTime.now());
+        pointsTransactionRepository.save(transaction);
+
+        // 创建已通过的任务执行记录（留作历史）
         TaskExecution taskExecution = new TaskExecution();
         taskExecution.setAssignment(assignment);
         taskExecution.setType(TransactionType.CONSUME);
@@ -102,7 +125,8 @@ public class TaskService {
         taskExecution.setQuantity(request.getQuantity());
         taskExecution.setPoints(points);
         taskExecution.setRemark(request.getRemark());
-        taskExecution.setStatus(TaskExecutionStatus.PENDING);
+        taskExecution.setStatus(TaskExecutionStatus.APPROVED);
+        taskExecution.setReviewedAt(LocalDateTime.now());
         taskExecution.setCreatedAt(LocalDateTime.now());
         taskExecutionRepository.save(taskExecution);
     }
@@ -144,6 +168,21 @@ public class TaskService {
     }
 
     /**
+     * 获取用户积分交易记录（支持过滤）
+     */
+    public List<PointsTransaction> getUserTransactions(Long userId, String type,
+                                                       LocalDate startDate, LocalDate endDate, String keyword) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new BusinessException("USER_NOT_FOUND", "用户不存在"));
+        return pointsTransactionRepository.findByUserOrderByCreatedAtDesc(user).stream()
+                .filter(t -> type == null || type.isEmpty() || t.getType().name().equals(type))
+                .filter(t -> startDate == null || t.getCreatedAt() == null || !t.getCreatedAt().toLocalDate().isBefore(startDate))
+                .filter(t -> endDate == null || t.getCreatedAt() == null || !t.getCreatedAt().toLocalDate().isAfter(endDate))
+                .filter(t -> keyword == null || keyword.isEmpty() || t.getDescription() == null || t.getDescription().contains(keyword))
+                .collect(Collectors.toList());
+    }
+
+    /**
      * 获取用户积分余额
      */
     public Long getUserPointsBalance(Long userId) {
@@ -157,6 +196,10 @@ public class TaskService {
         return taskExecutionRepository.findByAssignment_User_IdAndTypeOrderByExecutionDateDesc(userId, TransactionType.EARN);
     }
 
+    public Page<TaskExecution> getEarnTasks(Long userId, Pageable pageable) {
+        return taskExecutionRepository.findByAssignment_User_IdAndTypeOrderByExecutionDateDesc(userId, TransactionType.EARN, pageable);
+    }
+
     /**
      * 获取用户的消耗类任务记录
      */
@@ -164,11 +207,63 @@ public class TaskService {
         return taskExecutionRepository.findByAssignment_User_IdAndTypeOrderByExecutionDateDesc(userId, TransactionType.CONSUME);
     }
 
+    public Page<TaskExecution> getConsumeTasks(Long userId, Pageable pageable) {
+        return taskExecutionRepository.findByAssignment_User_IdAndTypeOrderByExecutionDateDesc(userId, TransactionType.CONSUME, pageable);
+    }
+
+    /**
+     * 检查分配的任务在今天是否已完成（用于每日任务）
+     */
+    public boolean isCompletedToday(Long assignmentId) {
+        return taskExecutionRepository.existsByAssignmentIdAndExecutionDate(assignmentId, LocalDate.now());
+    }
+
+    /**
+     * 检查分配的任务是否有过完成记录
+     */
+    public boolean hasCompletionRecords(Long assignmentId) {
+        return !taskExecutionRepository.findByAssignmentIdOrderByExecutionDateDesc(assignmentId).isEmpty();
+    }
+
     /**
      * 获取所有积分交易记录
      */
     public List<PointsTransaction> getAllTransactions() {
-        return pointsTransactionRepository.findAll();
+        return pointsTransactionRepository.findAllByOrderByCreatedAtDesc();
+    }
+
+    public Page<PointsTransaction> getAllTransactions(Pageable pageable) {
+        return pointsTransactionRepository.findAllByOrderByCreatedAtDesc(pageable);
+    }
+
+    public Page<PointsTransaction> getUserTransactionsPage(Long userId, Pageable pageable) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new BusinessException("USER_NOT_FOUND", "用户不存在"));
+        return pointsTransactionRepository.findByUserOrderByCreatedAtDesc(user, pageable);
+    }
+
+    /**
+     * 获取过滤后的积分交易记录（管理端使用）
+     */
+    public List<PointsTransaction> getFilteredTransactions(String type, LocalDate startDate, LocalDate endDate, String keyword, Long userId) {
+        return pointsTransactionRepository.findAllByOrderByCreatedAtDesc().stream()
+                .filter(t -> userId == null || t.getUser().getId().equals(userId))
+                .filter(t -> type == null || type.isEmpty() || t.getType().name().equals(type))
+                .filter(t -> startDate == null || t.getCreatedAt() == null || !t.getCreatedAt().toLocalDate().isBefore(startDate))
+                .filter(t -> endDate == null || t.getCreatedAt() == null || !t.getCreatedAt().toLocalDate().isAfter(endDate))
+                .filter(t -> keyword == null || keyword.isEmpty() || t.getDescription() == null || t.getDescription().contains(keyword))
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * 获取用户所有任务执行记录
+     */
+    public List<TaskExecution> getUserTaskExecutions(Long userId) {
+        return taskExecutionRepository.findTaskExecutionsByUserId(userId);
+    }
+
+    public Page<TaskExecution> getUserTaskExecutions(Long userId, Pageable pageable) {
+        return taskExecutionRepository.findTaskExecutionsByUserId(userId, pageable);
     }
 
     /**
@@ -176,6 +271,10 @@ public class TaskService {
      */
     public List<TaskExecution> getPendingTasks() {
         return taskExecutionRepository.findByStatus(TaskExecutionStatus.PENDING);
+    }
+
+    public Page<TaskExecution> getPendingTasks(Pageable pageable) {
+        return taskExecutionRepository.findByStatus(TaskExecutionStatus.PENDING, pageable);
     }
 
     /**

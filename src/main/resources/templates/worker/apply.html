@@ -10,13 +10,12 @@
         .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px 30px; display: flex; justify-content: space-between; align-items: center; }
         .nav-links a { color: white; text-decoration: none; margin-left: 20px; font-size: 14px; }
         .container { max-width: 700px; margin: 30px auto; padding: 0 20px; }
-        .form-card { background: white; border-radius: 10px; padding: 30px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 30px; }
-        .form-card h3 { color: #667eea; margin-bottom: 20px; }
         .form-group { margin-bottom: 15px; }
         .form-group label { display: block; margin-bottom: 5px; color: #555; font-weight: 500; }
         .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 10px; border: 2px solid #e0e0e0; border-radius: 5px; font-family: inherit; }
         .form-group textarea { resize: vertical; }
         .btn { padding: 12px 30px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; width: 100%; }
+        .cancel-btn { background: #95a5a6; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; font-size: 14px; }
         .section { background: white; border-radius: 10px; padding: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
         .section h3 { color: #667eea; margin-bottom: 15px; }
         table { width: 100%; border-collapse: collapse; }
@@ -29,6 +28,21 @@
         .status-approved { color: #27ae60; font-weight: 500; }
         .status-rejected { color: #e74c3c; font-weight: 500; }
         .empty-message { text-align: center; color: #999; padding: 20px; }
+        .create-btn { display: block; text-align: center; padding: 20px; margin-bottom: 30px; background: white; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); text-decoration: none; cursor: pointer; transition: all 0.3s; }
+        .create-btn:hover { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(0,0,0,0.15); }
+        .create-btn h3 { color: #667eea; margin: 0; }
+        @media (max-width: 768px) {
+            .header { flex-direction: column; gap: 8px; padding: 15px; text-align: center; }
+            .header h1 { font-size: 18px; }
+            .nav-links a { margin: 0 8px; font-size: 12px; }
+            .container { margin: 15px auto; padding: 0 12px; }
+            .section { padding: 12px; overflow-x: auto; }
+            .section h3 { font-size: 15px; }
+            .create-btn { padding: 15px; margin-bottom: 20px; }
+            .create-btn h3 { font-size: 15px; }
+            table { font-size: 12px; min-width: 450px; }
+            th, td { padding: 8px 6px; }
+        }
     </style>
 </head>
 <body>
@@ -41,48 +55,9 @@
     </div>
 
     <div class="container">
-        <div class="form-card">
-            <h3>创建新任务提案</h3>
-            <p style="color: #888; margin-bottom: 20px;">提交任务提案，管理员审核通过后任务将自动创建并分配给你</p>
-            <form id="applyForm">
-                <div class="form-group">
-                    <label>任务名称</label>
-                    <input type="text" name="name" required>
-                </div>
-                <div class="form-group">
-                    <label>任务类型</label>
-                    <select name="type" id="typeSelect" required>
-                        <option value="EARN">增加积分</option>
-                        <option value="CONSUME">消耗积分</option>
-                    </select>
-                </div>
-                <div class="form-group" id="earnFields">
-                    <label>单价（每次完成可得积分）</label>
-                    <input type="number" name="unitPrice" min="1" step="1">
-                </div>
-                <div class="form-group" id="consumeFields" style="display:none;">
-                    <label>消耗积分（每次消耗的积分数）</label>
-                    <input type="number" name="pointsToConsume" min="1" step="1">
-                </div>
-                <div class="form-group">
-                    <label>重复方式</label>
-                    <select name="repeatType">
-                        <option value="DAILY">每日</option>
-                        <option value="WEEKLY">每周</option>
-                        <option value="NONE">不重复</option>
-                    </select>
-                </div>
-                <div class="form-group" id="repeatDayGroup" style="display:none;">
-                    <label>每周重复日（1-7，周一到周日）</label>
-                    <input type="number" name="repeatDay" min="1" max="7">
-                </div>
-                <div class="form-group">
-                    <label>申请备注</label>
-                    <textarea name="remark" rows="3" placeholder="请说明为什么创建这个任务"></textarea>
-                </div>
-                <button type="submit" class="btn">提交申请</button>
-            </form>
-        </div>
+        <a href="/worker/apply/new" class="create-btn">
+            <h3>📝 创建新任务提案</h3>
+        </a>
 
         <div class="section">
             <h3>我的申请记录</h3>
@@ -97,10 +72,10 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <tr th:if="${myApplications.isEmpty()}">
+                    <tr th:if="${myApplications.totalElements == 0}">
                         <td colspan="5" class="empty-message">暂无申请记录</td>
                     </tr>
-                    <tr th:each="app : ${myApplications}">
+                    <tr th:each="app : ${myApplications.content}">
                         <td th:text="${app.projectName}"></td>
                         <td>
                             <span th:if="${app.projectType.name() == 'EARN'}" class="tag-earn" th:text="${app.projectType.label}">增加积分</span>
@@ -113,48 +88,10 @@
                     </tr>
                 </tbody>
             </table>
+            <div th:replace="fragments/pagination :: pagination(${myApplications}, '/worker/apply', '')"></div>
         </div>
     </div>
 
-    <script>
-        document.getElementById('typeSelect').addEventListener('change', function() {
-            const isEarn = this.value === 'EARN';
-            document.getElementById('earnFields').style.display = isEarn ? 'block' : 'none';
-            document.getElementById('consumeFields').style.display = isEarn ? 'none' : 'block';
-        });
 
-        document.querySelector('select[name="repeatType"]').addEventListener('change', function() {
-            document.getElementById('repeatDayGroup').style.display =
-                this.value === 'WEEKLY' ? 'block' : 'none';
-        });
-
-        document.getElementById('applyForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            const formData = new FormData(this);
-            const data = {
-                name: formData.get('name'),
-                type: formData.get('type'),
-                unitPrice: formData.get('unitPrice') ? parseInt(formData.get('unitPrice')) : null,
-                repeatType: formData.get('repeatType'),
-                repeatDay: formData.get('repeatDay') ? parseInt(formData.get('repeatDay')) : null,
-                pointsToConsume: formData.get('pointsToConsume') ? parseInt(formData.get('pointsToConsume')) : null,
-                remark: formData.get('remark')
-            };
-
-            fetch('/worker/apply/submit', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data)
-            }).then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    alert(data.message);
-                    location.reload();
-                } else {
-                    alert('操作失败: ' + data.message);
-                }
-            });
-        });
-    </script>
 </body>
 </html>

@@ -10,6 +10,8 @@ import com.pmp.repository.AssignmentRepository;
 import com.pmp.repository.ProjectRepository;
 import com.pmp.repository.TaskExecutionRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -51,7 +53,7 @@ public class ProjectService {
         project.setType(request.getType());
         project.setUnitPrice(request.getUnitPrice());
         project.setRepeatType(request.getRepeatType());
-        project.setRepeatDay(request.getRepeatDay());
+        project.setEndDate(request.getEndDate());
         project.setPointsToConsume(request.getPointsToConsume());
         project.setStatus(ProjectStatus.ACTIVE);
         project.setCreatedBy(createdBy);
@@ -67,6 +69,10 @@ public class ProjectService {
         return projectRepository.findAll().stream()
                 .map(this::convertToResponse)
                 .collect(Collectors.toList());
+    }
+
+    public Page<ProjectResponse> getAllProjects(Pageable pageable) {
+        return projectRepository.findAll(pageable).map(this::convertToResponse);
     }
 
     /**
@@ -106,7 +112,7 @@ public class ProjectService {
         response.setStatus(project.getStatus());
         response.setUnitPrice(project.getUnitPrice());
         response.setRepeatType(project.getRepeatType());
-        response.setRepeatDay(project.getRepeatDay());
+        response.setEndDate(project.getEndDate());
         response.setPointsToConsume(project.getPointsToConsume());
         response.setCreatedBy(project.getCreatedBy());
         response.setCreatedAt(project.getCreatedAt());

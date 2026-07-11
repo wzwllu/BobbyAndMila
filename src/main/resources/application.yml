@@ -16,6 +16,9 @@ spring:
       enabled: true
       path: /h2-console
 
+  thymeleaf:
+    cache: false
+
 server:
   port: 9082
 

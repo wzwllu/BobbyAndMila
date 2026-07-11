@@ -2,6 +2,7 @@ package com.pmp.dto;
 
 import com.pmp.enumeration.AssignmentStatus;
 import com.pmp.enumeration.ProjectType;
+import com.pmp.enumeration.RepeatType;
 import lombok.Data;
 
 import java.math.BigDecimal;
@@ -16,6 +17,7 @@ public class AssignmentResponse {
     private ProjectType projectType;
     private BigDecimal unitPrice;
     private Integer pointsToConsume;
+    private RepeatType repeatType;
     private Long userId;
     private String userName;
     private LocalDate startDate;

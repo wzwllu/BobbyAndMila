@@ -34,6 +34,34 @@
         .tag-consume { background: #fdecea; color: #e74c3c; padding: 3px 10px; border-radius: 10px; font-size: 12px; }
         .loading { text-align: center; color: #999; padding: 20px; }
         .back-btn { text-decoration: none; color: white; margin-left: 20px; font-size: 14px; }
+        .btn-sm { padding: 5px 12px; background: #667eea; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; }
+        .btn-sm:hover { opacity: 0.85; }
+        .status-pending { color: #f39c12; font-weight: 500; }
+        .status-approved { color: #27ae60; font-weight: 500; }
+        .status-rejected { color: #e74c3c; font-weight: 500; }
+
+        .filter-bar { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px solid #e0e0e0; }
+        .filter-group { display: flex; flex-direction: column; gap: 3px; }
+        .filter-group label { font-size: 12px; color: #888; font-weight: 500; }
+        .filter-group input, .filter-group select { padding: 7px 10px; border: 2px solid #e0e0e0; border-radius: 4px; font-size: 13px; min-width: 130px; }
+        .filter-group input:focus, .filter-group select:focus { outline: none; border-color: #667eea; }
+        .filter-btn { padding: 7px 16px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 13px; }
+        .filter-btn:hover { opacity: 0.9; }
+        .filter-reset { padding: 7px 16px; background: #95a5a6; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 13px; }
+        @media (max-width: 768px) {
+            .summary-cards { grid-template-columns: repeat(3, 1fr); gap: 10px; }
+            .card { padding: 12px; }
+            .card .num { font-size: 20px; }
+            .header { flex-direction: column; gap: 8px; padding: 15px; text-align: center; }
+            .container { margin: 15px auto; padding: 0 12px; }
+            .section { padding: 12px; overflow-x: auto; }
+            .filter-bar { flex-direction: column; gap: 8px; }
+            .filter-group { width: 100%; }
+            .filter-group input, .filter-group select { width: 100%; }
+            .filter-btn, .filter-reset { width: 100%; padding: 10px; text-align: center; }
+            table { font-size: 12px; min-width: 500px; }
+            th, td { padding: 8px 6px; }
+        }
     </style>
 </head>
 <body>
@@ -86,6 +114,7 @@
                         <th>完成任务数</th>
                         <th>获得积分</th>
                         <th>消耗积分</th>
+                        <th>操作</th>
                     </tr>
                 </thead>
                 <tbody id="dailyBody"></tbody>
@@ -94,16 +123,35 @@
         </div>
 
         <div id="tab-tasks" class="section">
-            <h3>按任务统计</h3>
+            <h3>任务执行明细</h3>
+            <div class="filter-bar">
+                <div class="filter-group">
+                    <label>项目名称</label>
+                    <input type="text" id="taskFilterProject" placeholder="筛选项目...">
+                </div>
+                <div class="filter-group">
+                    <label>状态</label>
+                    <select id="taskFilterStatus">
+                        <option value="">全部</option>
+                        <option value="APPROVED">已通过</option>
+                        <option value="PENDING">待审核</option>
+                        <option value="REJECTED">已拒绝</option>
+                    </select>
+                </div>
+                <button class="filter-btn" onclick="applyTaskFilter()">查询</button>
+                <button class="filter-reset" onclick="resetTaskFilter()">重置</button>
+            </div>
             <div id="tasksLoading" class="loading">加载中...</div>
             <table id="tasksTable" style="display:none;">
                 <thead>
                     <tr>
-                        <th>任务名称</th>
+                        <th>日期</th>
+                        <th>项目名称</th>
                         <th>类型</th>
-                        <th>已完成</th>
-                        <th>未完成</th>
-                        <th>总积分</th>
+                        <th>状态</th>
+                        <th>数量</th>
+                        <th>积分</th>
+                        <th>备注</th>
                     </tr>
                 </thead>
                 <tbody id="tasksBody"></tbody>
@@ -113,6 +161,30 @@
 
         <div id="tab-transactions" class="section">
             <h3>积分交易记录</h3>
+            <div class="filter-bar">
+                <div class="filter-group">
+                    <label>类型</label>
+                    <select id="txFilterType">
+                        <option value="">全部</option>
+                        <option value="EARN">赚取</option>
+                        <option value="CONSUME">消耗</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>开始日期</label>
+                    <input type="date" id="txFilterStartDate">
+                </div>
+                <div class="filter-group">
+                    <label>结束日期</label>
+                    <input type="date" id="txFilterEndDate">
+                </div>
+                <div class="filter-group">
+                    <label>关键字</label>
+                    <input type="text" id="txFilterKeyword" placeholder="搜索描述...">
+                </div>
+                <button class="filter-btn" onclick="applyTxFilter()">查询</button>
+                <button class="filter-reset" onclick="resetTxFilter()">重置</button>
+            </div>
             <div id="txLoading" class="loading">加载中...</div>
             <table id="txTable" style="display:none;">
                 <thead>
@@ -159,47 +231,124 @@
                         tr.innerHTML = '<td>' + d.date + '</td>'
                             + '<td>' + d.completedCount + '</td>'
                             + '<td style="color:#27ae60;">+' + d.earnedPoints + '</td>'
-                            + '<td style="color:#e74c3c;">-' + d.consumedPoints + '</td>';
+                            + '<td style="color:#e74c3c;">-' + d.consumedPoints + '</td>'
+                            + '<td><a class="btn-sm" href="/admin/users/' + userId + '/stats/daily/' + d.date + '/view">详情</a></td>';
                         tbody.appendChild(tr);
                     });
                 });
         }
 
         function loadTasks() {
-            fetch('/admin/users/' + userId + '/stats/tasks')
+            fetch('/admin/users/' + userId + '/task-executions')
                 .then(r => r.json())
                 .then(data => {
+                    window._allTaskData = (data && data.content) ? data.content : (data || []);
                     document.getElementById('tasksLoading').style.display = 'none';
-                    var tbody = document.getElementById('tasksBody');
-                    if (!data || data.length === 0) {
-                        document.getElementById('tasksEmpty').style.display = 'block';
-                        return;
-                    }
-                    document.getElementById('tasksTable').style.display = '';
-                    data.forEach(function(t) {
-                        var tr = document.createElement('tr');
-                        var typeTag = t.projectType === 'EARN'
-                            ? '<span class="tag-earn">增加积分</span>'
-                            : '<span class="tag-consume">消耗积分</span>';
-                        tr.innerHTML = '<td>' + t.projectName + '</td>'
-                            + '<td>' + typeTag + '</td>'
-                            + '<td>' + t.completedCount + '</td>'
-                            + '<td>' + t.incompleteCount + '</td>'
-                            + '<td>' + t.totalPoints + '</td>';
-                        tbody.appendChild(tr);
-                    });
+                    renderTasks(window._allTaskData);
                 });
         }
 
+        function renderTasks(data) {
+            var tbody = document.getElementById('tasksBody');
+            tbody.innerHTML = '';
+            if (!data || data.length === 0) {
+                document.getElementById('tasksEmpty').style.display = 'block';
+                document.getElementById('tasksTable').style.display = 'none';
+                return;
+            }
+            document.getElementById('tasksTable').style.display = '';
+            document.getElementById('tasksEmpty').style.display = 'none';
+            data.forEach(function(te) {
+                var typeClass = te.type === 'EARN' ? 'tag-earn' : 'tag-consume';
+                var statusClass = 'status-' + te.status.toLowerCase();
+                var tr = document.createElement('tr');
+                tr.innerHTML = '<td>' + te.date + '</td>'
+                    + '<td>' + te.projectName + '</td>'
+                    + '<td><span class="' + typeClass + '">' + te.typeLabel + '</span></td>'
+                    + '<td class="' + statusClass + '">' + te.statusLabel + '</td>'
+                    + '<td>' + (te.quantity || '-') + '</td>'
+                    + '<td>' + (te.points || '-') + '</td>'
+                    + '<td>' + (te.remark || '') + '</td>';
+                tbody.appendChild(tr);
+            });
+        }
+
+        function applyTaskFilter() {
+            var project = document.getElementById('taskFilterProject').value.trim().toLowerCase();
+            var status = document.getElementById('taskFilterStatus').value;
+            if (!project && !status) {
+                renderTasks(window._allTaskData);
+                return;
+            }
+            var filtered = (window._allTaskData || []).filter(function(te) {
+                var match = true;
+                if (project) match = match && te.projectName.toLowerCase().indexOf(project) !== -1;
+                if (status) match = match && te.status === status;
+                return match;
+            });
+            renderTasks(filtered);
+        }
+
+        function resetTaskFilter() {
+            document.getElementById('taskFilterProject').value = '';
+            document.getElementById('taskFilterStatus').value = '';
+            renderTasks(window._allTaskData);
+        }
+
         function loadTransactions() {
-            fetch('/admin/users/' + userId + '/stats/daily')
+            fetch('/admin/users/' + userId + '/transactions')
                 .then(r => r.json())
                 .then(data => {
+                    window._allTxData = (data && data.content) ? data.content : (data || []);
                     document.getElementById('txLoading').style.display = 'none';
-                    var tbody = document.getElementById('txBody');
-                    document.getElementById('txEmpty').style.display = 'block';
-                    document.getElementById('txEmpty').textContent = '交易记录请前往「积分管理」页面查看';
+                    renderTx(window._allTxData);
                 });
+        }
+
+        function renderTx(data) {
+            var tbody = document.getElementById('txBody');
+            tbody.innerHTML = '';
+            if (!data || data.length === 0) {
+                document.getElementById('txEmpty').style.display = 'block';
+                document.getElementById('txTable').style.display = 'none';
+                return;
+            }
+            document.getElementById('txTable').style.display = '';
+            document.getElementById('txEmpty').style.display = 'none';
+            data.forEach(function(tx) {
+                var typeClass = tx.type === 'EARN' ? 'tag-earn' : 'tag-consume';
+                var tr = document.createElement('tr');
+                tr.innerHTML = '<td>' + tx.createdAt + '</td>'
+                    + '<td><span class="' + typeClass + '">' + tx.typeLabel + '</span></td>'
+                    + '<td style="font-weight:500;color:' + (tx.type === 'EARN' ? '#27ae60' : '#e74c3c') + ';">'
+                    + (tx.type === 'EARN' ? '+' : '-') + tx.amount + '</td>'
+                    + '<td>' + (tx.description || '') + '</td>';
+                tbody.appendChild(tr);
+            });
+        }
+
+        function applyTxFilter() {
+            var type = document.getElementById('txFilterType').value;
+            var startDate = document.getElementById('txFilterStartDate').value;
+            var endDate = document.getElementById('txFilterEndDate').value;
+            var keyword = document.getElementById('txFilterKeyword').value.trim().toLowerCase();
+
+            var filtered = (window._allTxData || []).filter(function(tx) {
+                if (type && tx.type !== type) return false;
+                if (startDate && tx.createdAt && tx.createdAt.substring(0, 10) < startDate) return false;
+                if (endDate && tx.createdAt && tx.createdAt.substring(0, 10) > endDate) return false;
+                if (keyword && tx.description && tx.description.toLowerCase().indexOf(keyword) === -1) return false;
+                return true;
+            });
+            renderTx(filtered);
+        }
+
+        function resetTxFilter() {
+            document.getElementById('txFilterType').value = '';
+            document.getElementById('txFilterStartDate').value = '';
+            document.getElementById('txFilterEndDate').value = '';
+            document.getElementById('txFilterKeyword').value = '';
+            renderTx(window._allTxData);
         }
 
         loadDaily();

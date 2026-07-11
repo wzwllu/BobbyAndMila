@@ -61,7 +61,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <tr th:each="assignment : ${assignments}">
+                    <tr th:each="assignment : ${assignments.content}">
                         <td th:text="${assignment.id}"></td>
                         <td th:text="${assignment.projectName}"></td>
                         <td th:text="${assignment.userName}"></td>
@@ -79,6 +79,7 @@
                     </tr>
                 </tbody>
             </table>
+            <div th:replace="fragments/pagination :: pagination(${assignments}, '/admin/assignments', '')"></div>
         </div>
     </div>
 

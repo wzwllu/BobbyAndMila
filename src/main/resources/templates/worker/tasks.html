@@ -21,16 +21,36 @@
         tr:hover { background: #f8f9fa; }
         .btn { padding: 8px 15px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 14px; }
         .btn:disabled { background: #ccc; cursor: not-allowed; }
+        .btn-success { background: #27ae60; }
         .form-group { display: flex; gap: 10px; align-items: flex-end; margin-bottom: 15px; }
         .form-group input, .form-group textarea { padding: 8px 12px; border: 2px solid #e0e0e0; border-radius: 5px; width: 100%; font-family: inherit; }
         .empty-message { text-align: center; color: #999; padding: 20px; }
         .status-pending { color: #f39c12; font-weight: 500; }
         .status-approved { color: #27ae60; font-weight: 500; }
         .status-rejected { color: #e74c3c; font-weight: 500; }
+        .status-completed { color: #27ae60; font-weight: 500; }
+        .status-expired { color: #e74c3c; font-weight: 500; }
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center; }
         .modal-content { background: white; padding: 30px; border-radius: 10px; width: 100%; max-width: 500px; }
         .modal-buttons { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
         .cancel-btn { background: #95a5a6; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; }
+        @media (max-width: 768px) {
+            .header { flex-direction: column; gap: 8px; padding: 15px; text-align: center; }
+            .header h1 { font-size: 18px; }
+            .nav-links a { margin: 0 8px; font-size: 12px; }
+            .container { margin: 15px auto; padding: 0 12px; }
+            .page-header { flex-direction: column; gap: 10px; align-items: flex-start; }
+            .page-header h2 { font-size: 16px; }
+            .balance-display { padding: 10px 15px; font-size: 13px; align-self: flex-start; }
+            .section { padding: 12px; overflow-x: auto; }
+            .section h3 { font-size: 15px; }
+            table { font-size: 12px; min-width: 500px; }
+            th, td { padding: 8px 6px; }
+            .btn { padding: 6px 10px; font-size: 12px; }
+            .modal-content { margin: 0 15px; padding: 20px; }
+            .form-group { flex-direction: column; gap: 5px; }
+            .form-group input, .form-group textarea { font-size: 14px; }
+        }
     </style>
 </head>
 <body>
@@ -70,8 +90,12 @@
                             <td th:text="${assignment.projectName}"></td>
                             <td th:text="${assignment.unitPrice}"></td>
                             <td th:text="${#temporals.format(assignment.startDate, 'yyyy-MM-dd')}"></td>
-                            <td th:text="${#temporals.format(assignment.endDate, 'yyyy-MM-dd')}"></td>
-                            <td th:text="${assignment.status.label}"></td>
+                            <td th:text="${assignment.endDate != null ? #temporals.format(assignment.endDate, 'yyyy-MM-dd') : '-'}"></td>
+                            <td>
+                                <span th:if="${completionStatus[assignment.id] == 'completed'}" class="status-completed">今天已完成</span>
+                                <span th:if="${completionStatus[assignment.id] == 'expired'}" class="status-expired">已过期</span>
+                                <span th:if="${completionStatus[assignment.id] == 'pending'}" th:text="${assignment.status.label}">进行中</span>
+                            </td>
                             <td>
                                 <button class="btn"
                                         th:attr="data-assignment-id=${assignment.id}, data-project-name=${assignment.projectName}"
@@ -97,10 +121,10 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <tr th:if="${earnTasks.isEmpty()}">
+                    <tr th:if="${earnTasks.totalElements == 0}">
                         <td colspan="6" class="empty-message">暂无完成记录</td>
                     </tr>
-                    <tr th:each="task : ${earnTasks}">
+                    <tr th:each="task : ${earnTasks.content}">
                         <td th:text="${task.assignment.project.name}"></td>
                         <td th:text="${#temporals.format(task.executionDate, 'yyyy-MM-dd')}"></td>
                         <td th:text="${task.quantity}"></td>
@@ -111,6 +135,7 @@
                     </tr>
                 </tbody>
             </table>
+            <div th:replace="fragments/pagination :: pagination(${earnTasks}, '/worker/tasks', '')"></div>
         </div>
     </div>
 

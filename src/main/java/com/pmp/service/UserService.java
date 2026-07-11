@@ -7,6 +7,7 @@ import com.pmp.dto.TaskStatsResponse;
 import com.pmp.dto.UserRequest;
 import com.pmp.dto.UserResponse;
 import com.pmp.dto.UserStatsResponse;
+import com.pmp.entity.TaskExecution;
 import com.pmp.entity.User;
 import com.pmp.enumeration.Role;
 import com.pmp.exception.BusinessException;
@@ -14,6 +15,8 @@ import com.pmp.repository.PointsTransactionRepository;
 import com.pmp.repository.TaskExecutionRepository;
 import com.pmp.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -22,6 +25,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -84,6 +88,10 @@ public class UserService implements UserDetailsService {
         return users.stream()
                 .map(this::toResponse)
                 .collect(Collectors.toList());
+    }
+
+    public Page<UserResponse> getAllUsers(Pageable pageable) {
+        return userRepository.findAll(pageable).map(this::toResponse);
     }
 
     /**
@@ -178,6 +186,13 @@ public class UserService implements UserDetailsService {
             d.setConsumedPoints(((Number) r[3]).longValue());
             return d;
         }).collect(java.util.stream.Collectors.toList());
+    }
+
+    /**
+     * 获取指定日期的任务执行详情
+     */
+    public List<TaskExecution> getDailyTaskDetails(Long userId, LocalDate date) {
+        return taskExecutionRepository.findByAssignment_User_IdAndExecutionDateOrderByExecutionDateDesc(userId, date);
     }
 
     /**

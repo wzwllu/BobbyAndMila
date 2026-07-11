@@ -2,6 +2,8 @@ package com.pmp.repository;
 
 import com.pmp.entity.PointsTransaction;
 import com.pmp.entity.User;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -19,6 +21,15 @@ public interface PointsTransactionRepository extends JpaRepository<PointsTransac
      * 查找用户的积分交易记录，按创建时间倒序
      */
     List<PointsTransaction> findByUserOrderByCreatedAtDesc(User user);
+
+    Page<PointsTransaction> findByUserOrderByCreatedAtDesc(User user, Pageable pageable);
+
+    /**
+     * 查找所有积分交易记录，按创建时间倒序
+     */
+    List<PointsTransaction> findAllByOrderByCreatedAtDesc();
+
+    Page<PointsTransaction> findAllByOrderByCreatedAtDesc(Pageable pageable);
 
     /**
      * 计算用户获得的总积分

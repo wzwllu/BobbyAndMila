@@ -25,6 +25,15 @@
         .btn:hover { opacity: 0.9; }
         .btn-add { background: linear-gradient(135deg, #27ae60, #2ecc71); }
         .btn-sub { background: linear-gradient(135deg, #e74c3c, #c0392b); }
+        .btn-reset { background: #95a5a6; }
+        .btn-search { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+
+        .filter-bar { display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap; margin-bottom: 20px; padding: 20px; background: white; border-radius: 10px; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); }
+        .filter-bar .form-group { display: flex; flex-direction: column; }
+        .filter-bar .form-group label { margin-bottom: 4px; color: #555; font-weight: 500; font-size: 12px; }
+        .filter-bar .form-group select, .filter-bar .form-group input { padding: 8px 10px; border: 2px solid #e0e0e0; border-radius: 5px; min-width: 140px; font-size: 13px; }
+        .filter-bar .form-group input[type="date"] { min-width: 140px; }
+        .filter-actions { display: flex; gap: 8px; align-items: flex-end; }
 
         .table-container { background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); }
         table { width: 100%; border-collapse: collapse; }
@@ -75,6 +84,39 @@
             <h2>积分交易记录</h2>
         </div>
 
+        <div class="filter-bar">
+            <div class="form-group">
+                <label>用户</label>
+                <select id="filterUserId">
+                    <option value="">全部用户</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>类型</label>
+                <select id="filterType">
+                    <option value="">全部</option>
+                    <option value="EARN">赚取</option>
+                    <option value="CONSUME">消耗</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>开始日期</label>
+                <input type="date" id="filterStartDate">
+            </div>
+            <div class="form-group">
+                <label>结束日期</label>
+                <input type="date" id="filterEndDate">
+            </div>
+            <div class="form-group">
+                <label>关键字</label>
+                <input type="text" id="filterKeyword" placeholder="搜索描述">
+            </div>
+            <div class="filter-actions">
+                <button class="btn btn-search" onclick="applyFilter()">查询</button>
+                <button class="btn btn-reset" onclick="resetFilter()">重置</button>
+            </div>
+        </div>
+
         <div class="table-container">
             <table>
                 <thead>
@@ -87,8 +129,11 @@
                         <th>时间</th>
                     </tr>
                 </thead>
-                <tbody>
-                    <tr th:each="tx : ${transactions}">
+                <tbody id="txBody">
+                    <tr th:if="${transactions.totalElements == 0}">
+                        <td colspan="6" style="text-align:center;color:#999;padding:20px;">暂无交易记录</td>
+                    </tr>
+                    <tr th:each="tx : ${transactions.content}">
                         <td th:text="${tx.id}"></td>
                         <td th:text="${tx.user.username}"></td>
                         <td>
@@ -101,23 +146,29 @@
                     </tr>
                 </tbody>
             </table>
+            <div id="paginationContainer">
+                <div th:replace="fragments/pagination :: pagination(${transactions}, '/admin/points', '')"></div>
+            </div>
         </div>
     </div>
 
     <script>
-        // 加载用户列表
         function loadUsers() {
             fetch('/admin/users/list')
                 .then(response => response.json())
                 .then(users => {
                     users = users || [];
-                    const select = document.getElementById('adjustUserId');
-                    select.innerHTML = '<option value="">请选择用户</option>';
-                    users.forEach(user => {
-                        const opt = document.createElement('option');
-                        opt.value = user.id;
-                        opt.textContent = user.username;
-                        select.appendChild(opt);
+                    ['adjustUserId', 'filterUserId'].forEach(id => {
+                        const select = document.getElementById(id);
+                        if (!select) return;
+                        const placeholder = id === 'adjustUserId' ? '请选择用户' : '全部用户';
+                        select.innerHTML = '<option value="">' + placeholder + '</option>';
+                        users.forEach(user => {
+                            const opt = document.createElement('option');
+                            opt.value = user.id;
+                            opt.textContent = user.username;
+                            select.appendChild(opt);
+                        });
                     });
                 });
         }
@@ -150,10 +201,61 @@
             .then(response => response.json())
             .then(data => {
                 showAdjustMessage(data.message + '，当前余额: ' + data.newBalance, 'success');
-                // 延迟刷新列表
                 setTimeout(() => location.reload(), 1500);
             })
             .catch(() => showAdjustMessage('操作失败', 'error'));
+        }
+
+        function applyFilter() {
+            const userId = document.getElementById('filterUserId').value;
+            const type = document.getElementById('filterType').value;
+            const startDate = document.getElementById('filterStartDate').value;
+            const endDate = document.getElementById('filterEndDate').value;
+            const keyword = document.getElementById('filterKeyword').value;
+
+            const params = new URLSearchParams();
+            if (userId) params.append('userId', userId);
+            if (type) params.append('type', type);
+            if (startDate) params.append('startDate', startDate);
+            if (endDate) params.append('endDate', endDate);
+            if (keyword) params.append('keyword', keyword);
+
+            fetch('/admin/points/transactions?' + params.toString())
+                .then(response => response.json())
+                .then(data => {
+                    renderTransactions(data);
+                    var pc = document.getElementById('paginationContainer');
+                    if (pc) pc.innerHTML = '';
+                });
+        }
+
+        function resetFilter() {
+            document.getElementById('filterUserId').value = '';
+            document.getElementById('filterType').value = '';
+            document.getElementById('filterStartDate').value = '';
+            document.getElementById('filterEndDate').value = '';
+            document.getElementById('filterKeyword').value = '';
+            location.href = '/admin/points';
+        }
+
+        function renderTransactions(data) {
+            const tbody = document.getElementById('txBody');
+            const items = data && data.content ? data.content : (data || []);
+            if (items.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#999;padding:20px;">暂无交易记录</td></tr>';
+                return;
+            }
+            tbody.innerHTML = items.map(tx => {
+                const typeClass = tx.type === 'EARN' ? 'earn' : 'consume';
+                return '<tr>' +
+                    '<td>' + tx.id + '</td>' +
+                    '<td>' + tx.username + '</td>' +
+                    '<td><span class="' + typeClass + '">' + tx.typeLabel + '</span></td>' +
+                    '<td>' + tx.amount + '</td>' +
+                    '<td>' + (tx.description || '') + '</td>' +
+                    '<td>' + tx.createdAt + '</td>' +
+                    '</tr>';
+            }).join('');
         }
 
         loadUsers();

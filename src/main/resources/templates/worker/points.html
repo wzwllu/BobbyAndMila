@@ -23,6 +23,31 @@
         .tx-earn { color: #27ae60; font-weight: bold; }
         .tx-consume { color: #e74c3c; font-weight: bold; }
         .empty-message { text-align: center; color: #999; padding: 20px; }
+        .filter-bar { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid #e0e0e0; }
+        .filter-group { display: flex; flex-direction: column; gap: 4px; }
+        .filter-group label { font-size: 12px; color: #888; font-weight: 500; }
+        .filter-group input, .filter-group select { padding: 8px 12px; border: 2px solid #e0e0e0; border-radius: 5px; font-family: inherit; font-size: 13px; }
+        .filter-group input:focus, .filter-group select:focus { outline: none; border-color: #667eea; }
+        .filter-btn { padding: 8px 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 13px; }
+        .filter-btn:hover { opacity: 0.9; }
+        .filter-reset { padding: 8px 20px; background: #95a5a6; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 13px; }
+        @media (max-width: 768px) {
+            .header { flex-direction: column; gap: 8px; padding: 15px; text-align: center; }
+            .header h1 { font-size: 18px; }
+            .nav-links a { margin: 0 8px; font-size: 12px; }
+            .container { margin: 15px auto; padding: 0 12px; }
+            .balance-card { padding: 25px 15px; margin-bottom: 20px; }
+            .balance-card h2 { font-size: 18px; }
+            .balance-card .amount { font-size: 36px; }
+            .section { padding: 15px; overflow-x: auto; }
+            .section h3 { font-size: 16px; }
+            .filter-bar { flex-direction: column; gap: 10px; padding-bottom: 15px; }
+            .filter-group { width: 100%; }
+            .filter-group input, .filter-group select { width: 100%; }
+            .filter-btn, .filter-reset { width: 100%; padding: 12px; text-align: center; }
+            table { font-size: 12px; min-width: 400px; }
+            th, td { padding: 8px 6px; }
+        }
     </style>
 </head>
 <body>
@@ -42,7 +67,31 @@
 
         <div class="section">
             <h3>积分明细列表</h3>
-            <table>
+            <div class="filter-bar">
+                <div class="filter-group">
+                    <label>类型</label>
+                    <select id="filterType">
+                        <option value="">全部</option>
+                        <option value="EARN">增加积分</option>
+                        <option value="CONSUME">消耗积分</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>开始日期</label>
+                    <input type="date" id="filterStartDate">
+                </div>
+                <div class="filter-group">
+                    <label>结束日期</label>
+                    <input type="date" id="filterEndDate">
+                </div>
+                <div class="filter-group">
+                    <label>关键字</label>
+                    <input type="text" id="filterKeyword" placeholder="搜索说明...">
+                </div>
+                <button class="filter-btn" onclick="applyFilter()">查询</button>
+                <button class="filter-reset" onclick="resetFilter()">重置</button>
+            </div>
+            <table id="transactionsTable">
                 <thead>
                     <tr>
                         <th>类型</th>
@@ -51,11 +100,11 @@
                         <th>时间</th>
                     </tr>
                 </thead>
-                <tbody>
-                    <tr th:if="${transactions.isEmpty()}">
+                <tbody id="transactionsBody">
+                    <tr th:if="${transactions.totalElements == 0}">
                         <td colspan="4" class="empty-message">暂无积分记录</td>
                     </tr>
-                    <tr th:each="tx : ${transactions}">
+                    <tr th:each="tx : ${transactions.content}">
                         <td>
                             <span th:if="${tx.type.name() == 'EARN'}" class="tx-icon">💰</span>
                             <span th:if="${tx.type.name() == 'CONSUME'}" class="tx-icon">💸</span>
@@ -70,6 +119,9 @@
                     </tr>
                 </tbody>
             </table>
+            <div id="paginationContainer">
+                <div th:replace="fragments/pagination :: pagination(${transactions}, '/worker/points', '')"></div>
+            </div>
         </div>
     </div>
 
@@ -79,6 +131,51 @@
                 .then(response => response.json())
                 .then(data => { document.getElementById('pointsBalance').textContent = data.balance; });
         }
+
+        function applyFilter() {
+            var type = document.getElementById('filterType').value;
+            var startDate = document.getElementById('filterStartDate').value;
+            var endDate = document.getElementById('filterEndDate').value;
+            var keyword = document.getElementById('filterKeyword').value;
+
+            var params = new URLSearchParams();
+            if (type) params.append('type', type);
+            if (startDate) params.append('startDate', startDate);
+            if (endDate) params.append('endDate', endDate);
+            if (keyword) params.append('keyword', keyword);
+
+            fetch('/worker/points/transactions?' + params.toString())
+                .then(response => response.json())
+                .then(function(data) {
+                    var tbody = document.getElementById('transactionsBody');
+                    var items = data.content || [];
+                    if (items.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="4" class="empty-message">没有符合条件的结果</td></tr>';
+                        return;
+                    }
+                    var html = '';
+                    for (var i = 0; i < items.length; i++) {
+                        var tx = items[i];
+                        var isEarn = tx.type === 'EARN';
+                        html += '<tr>' +
+                            '<td><span class="tx-icon">' + (isEarn ? '💰' : '💸') + '</span> ' + tx.typeLabel + '</td>' +
+                            '<td>' + (tx.description || '') + '</td>' +
+                            '<td><span class="' + (isEarn ? 'tx-earn' : 'tx-consume') + '">' + (isEarn ? '+' : '-') + tx.amount + '</span></td>' +
+                            '<td>' + tx.createdAt + '</td>' +
+                            '</tr>';
+                    }
+                    tbody.innerHTML = html;
+                });
+        }
+
+        function resetFilter() {
+            document.getElementById('filterType').value = '';
+            document.getElementById('filterStartDate').value = '';
+            document.getElementById('filterEndDate').value = '';
+            document.getElementById('filterKeyword').value = '';
+            applyFilter();
+        }
+
         loadBalance();
     </script>
 </body>

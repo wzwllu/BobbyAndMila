@@ -5,6 +5,7 @@ import com.pmp.enumeration.RepeatType;
 import lombok.Data;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 
 @Data
 public class ProjectRequest {
@@ -12,6 +13,6 @@ public class ProjectRequest {
     private ProjectType type;
     private BigDecimal unitPrice;
     private RepeatType repeatType;
-    private Integer repeatDay;
+    private LocalDate endDate;
     private Integer pointsToConsume;
 }

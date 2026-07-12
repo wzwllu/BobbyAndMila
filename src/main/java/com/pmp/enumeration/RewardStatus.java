@@ -3,12 +3,13 @@ package com.pmp.enumeration;
 import lombok.Getter;
 
 @Getter
-public enum ProjectType {
-    EARN("增加积分");
+public enum RewardStatus {
+    ACTIVE("上架中"),
+    DISABLED("已下架");
 
     private final String label;
 
-    ProjectType(String label) {
+    RewardStatus(String label) {
         this.label = label;
     }
 }

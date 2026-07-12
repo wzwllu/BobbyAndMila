@@ -98,7 +98,6 @@ public class AssignmentService {
         response.setProjectName(assignment.getProject().getName());
         response.setProjectType(assignment.getProject().getType());
         response.setUnitPrice(assignment.getProject().getUnitPrice());
-        response.setPointsToConsume(assignment.getProject().getPointsToConsume());
         response.setRepeatType(assignment.getProject().getRepeatType());
         response.setUserId(assignment.getUser().getId());
         response.setUserName(assignment.getUser().getUsername());

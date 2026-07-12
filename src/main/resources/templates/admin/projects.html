@@ -175,7 +175,6 @@
                     <th>类型</th>
                     <th>单价</th>
                     <th>重复方式</th>
-                    <th>消耗积分</th>
                     <th>状态</th>
                     <th>操作</th>
                 </tr>
@@ -187,7 +186,6 @@
                     <td th:text="${project.type.label}"></td>
                     <td th:text="${project.unitPrice}"></td>
                     <td th:text="${project.repeatType.label}"></td>
-                    <td th:text="${project.pointsToConsume}"></td>
                     <td th:text="${project.status.label}"></td>
                     <td>
                         <button class="action-btn delete-btn" th:if="${project.status.name() == 'ACTIVE'}"
@@ -209,19 +207,8 @@
                     <input type="text" name="name" required>
                 </div>
                 <div class="form-group">
-                    <label>任务类型</label>
-                    <select name="type" id="typeSelect" required>
-                        <option value="EARN">增加积分</option>
-                        <option value="CONSUME">消耗积分</option>
-                    </select>
-                </div>
-                <div class="form-group" id="earnFields">
                     <label>单价（每次完成可得积分）</label>
                     <input type="number" name="unitPrice" min="1" step="1">
-                </div>
-                <div class="form-group" id="consumeFields" style="display:none;">
-                    <label>消耗积分（每次消耗的积分数）</label>
-                    <input type="number" name="pointsToConsume" min="1" step="1">
                 </div>
                 <div class="form-group">
                     <label>重复方式</label>
@@ -246,20 +233,11 @@
         function showModal() {
             document.getElementById('projectModal').style.display = 'flex';
             document.getElementById('endDateGroup').style.display = 'none';
-            document.getElementById('typeSelect').value = 'EARN';
-            document.getElementById('earnFields').style.display = 'block';
-            document.getElementById('consumeFields').style.display = 'none';
         }
 
         function hideModal() {
             document.getElementById('projectModal').style.display = 'none';
         }
-
-        document.getElementById('typeSelect').addEventListener('change', function() {
-            const isEarn = this.value === 'EARN';
-            document.getElementById('earnFields').style.display = isEarn ? 'block' : 'none';
-            document.getElementById('consumeFields').style.display = isEarn ? 'none' : 'block';
-        });
 
         document.getElementById('repeatTypeSelect').addEventListener('change', function() {
             document.getElementById('endDateGroup').style.display =
@@ -271,11 +249,9 @@
             const formData = new FormData(this);
             const data = {
                 name: formData.get('name'),
-                type: formData.get('type'),
                 unitPrice: formData.get('unitPrice') ? parseInt(formData.get('unitPrice')) : null,
                 repeatType: formData.get('repeatType'),
-                endDate: formData.get('endDate') || null,
-                pointsToConsume: formData.get('pointsToConsume') ? parseInt(formData.get('pointsToConsume')) : null
+                endDate: formData.get('endDate') || null
             };
 
             fetch('/admin/projects', {

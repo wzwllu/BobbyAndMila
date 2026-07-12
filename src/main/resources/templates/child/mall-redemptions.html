@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我的兑换 - 大宝小宝积分系统</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f5f6fa; }
+        .header { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; padding: 20px 30px; display: flex; justify-content: space-between; align-items: center; }
+        .header h1 { font-size: 20px; }
+        .header a { color: white; text-decoration: none; margin-left: 16px; font-size: 14px; }
+        .container { max-width: 900px; margin: 20px auto; padding: 0 16px; }
+        .page-header { margin-bottom: 16px; }
+        .page-header h2 { font-size: 18px; color: #333; }
+        table { width: 100%; border-collapse: collapse; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.08); }
+        th, td { padding: 12px 14px; text-align: left; border-bottom: 1px solid #f0f0f0; font-size: 14px; }
+        th { background: #f8f9fa; color: #555; font-weight: 600; }
+        .empty-message { text-align: center; color: #bbb; padding: 30px; }
+        .status-pending { color: #f39c12; font-weight: 500; }
+        .status-approved { color: #27ae60; font-weight: 500; }
+        .status-rejected { color: #e74c3c; font-weight: 500; }
+        .back-link { display: inline-block; margin-bottom: 16px; color: #667eea; text-decoration: none; font-size: 14px; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>📋 我的兑换记录</h1>
+        <div>
+            <a href="/child/mall">返回商城</a>
+            <a href="/worker">返回首页</a>
+            <a href="/logout">退出登录</a>
+        </div>
+    </div>
+    <div class="container">
+        <a href="/child/mall" class="back-link">← 返回商城</a>
+        <div class="page-header"><h2>📋 我的兑换记录</h2></div>
+        <table>
+            <thead>
+                <tr>
+                    <th>奖励</th>
+                    <th>消耗积分</th>
+                    <th>数量</th>
+                    <th>申请时间</th>
+                    <th>核销时间</th>
+                    <th>状态</th>
+                    <th>备注</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:if="${myRedemptions.totalElements == 0}">
+                    <td colspan="7" class="empty-message">还没有兑换记录</td>
+                </tr>
+                <tr th:each="r : ${myRedemptions.content}">
+                    <td th:text="${r.rewardName}"></td>
+                    <td th:text="${r.totalPoints}"></td>
+                    <td th:text="${r.quantity}"></td>
+                    <td th:text="${#temporals.format(r.createdAt, 'yyyy-MM-dd HH:mm')}"></td>
+                    <td th:text="${r.verifiedAt != null ? #temporals.format(r.verifiedAt, 'yyyy-MM-dd HH:mm') : '-'}"></td>
+                    <td th:class="${r.status == 'APPROVED' ? 'status-approved' : (r.status == 'REJECTED' ? 'status-rejected' : 'status-pending')}"
+                        th:text="${r.statusLabel}"></td>
+                    <td th:text="${r.reviewRemark}"></td>
+                </tr>
+            </tbody>
+        </table>
+        <div th:replace="fragments/pagination :: pagination(${myRedemptions}, '/child/mall', '')"></div>
+    </div>
+</body>
+</html>

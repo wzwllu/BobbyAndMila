@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>积分商城管理 - 大宝小宝积分系统</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f5f6fa; }
+        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px 30px; display: flex; justify-content: space-between; align-items: center; }
+        .header h1 { font-size: 22px; }
+        .nav-links a { color: white; text-decoration: none; margin-left: 20px; font-size: 14px; }
+        .container { max-width: 1100px; margin: 20px auto; padding: 0 16px; }
+        .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px; }
+        .page-header h2 { font-size: 20px; color: #333; }
+        .btn { padding: 8px 20px; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 500; }
+        .btn-primary { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
+        .btn-sm { padding: 5px 12px; font-size: 12px; border-radius: 6px; }
+        .btn-success { background: #27ae60; color: white; }
+        .btn-warning { background: #f39c12; color: white; }
+        table { width: 100%; border-collapse: collapse; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.08); }
+        th, td { padding: 12px 14px; text-align: left; border-bottom: 1px solid #f0f0f0; font-size: 14px; }
+        th { background: #f8f9fa; color: #555; font-weight: 600; }
+        tr:hover { background: #f8f9fa; }
+        .empty-message { text-align: center; color: #bbb; padding: 30px; }
+        .status-active { color: #27ae60; font-weight: 500; }
+        .status-disabled { color: #e74c3c; font-weight: 500; }
+        .action-group { display: flex; gap: 6px; flex-wrap: wrap; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.45); z-index: 1000; justify-content: center; align-items: center; }
+        .modal-content { background: white; padding: 28px; border-radius: 16px; width: 100%; max-width: 500px; margin: 0 16px; }
+        .modal-content h3 { margin-bottom: 16px; }
+        .form-group { margin-bottom: 14px; }
+        .form-group label { display: block; font-size: 14px; color: #555; margin-bottom: 4px; font-weight: 500; }
+        .form-group input, .form-group textarea, .form-group select { width: 100%; padding: 8px 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 14px; font-family: inherit; }
+        .form-row { display: flex; gap: 12px; }
+        .form-row .form-group { flex: 1; }
+        .modal-buttons { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
+        .cancel-btn { background: #e0e0e0; color: #555; padding: 8px 20px; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; }
+        @media (max-width: 768px) {
+            .header { flex-direction: column; gap: 8px; padding: 15px; text-align: center; }
+            .header h1 { font-size: 18px; }
+            .container { margin: 12px auto; padding: 0 10px; }
+            table { font-size: 12px; }
+            th, td { padding: 8px 6px; }
+            .form-row { flex-direction: column; gap: 0; }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>⚙️ 积分商城管理</h1>
+        <div class="nav-links">
+            <a href="/admin">返回首页</a>
+            <a href="/admin/reviews">兑换审核</a>
+            <a href="/logout">退出登录</a>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="page-header">
+            <h2>🎁 奖励列表</h2>
+            <button class="btn btn-primary" onclick="showCreateModal()">＋ 新增奖励</button>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>名称</th>
+                    <th>所需积分</th>
+                    <th>库存</th>
+                    <th>状态</th>
+                    <th>创建时间</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:if="${rewards.totalElements == 0}">
+                    <td colspan="6" class="empty-message">暂无奖励，点击「新增奖励」添加</td>
+                </tr>
+                <tr th:each="r : ${rewards.content}">
+                    <td th:text="${r.name}"></td>
+                    <td th:text="${r.costPoints}"></td>
+                    <td th:text="${r.stock != null ? r.stock : '不限'}"></td>
+                    <td th:class="${r.status == 'ACTIVE' ? 'status-active' : 'status-disabled'}" th:text="${r.statusLabel}"></td>
+                    <td th:text="${#temporals.format(r.createdAt, 'yyyy-MM-dd')}"></td>
+                    <td>
+                        <div class="action-group">
+                            <button class="btn btn-sm btn-primary" th:attr="onclick='showEditModal(' + ${r.id} + ')'">编辑</button>
+                            <button class="btn btn-sm" th:class="${r.status == 'ACTIVE' ? 'btn-warning' : 'btn-success'}"
+                                    th:attr="onclick='toggleStatus(' + ${r.id} + ')'"
+                                    th:text="${r.status == 'ACTIVE' ? '下架' : '上架'}"></button>
+                        </div>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        <div th:replace="fragments/pagination :: pagination(${rewards}, '/parent/mall', '')"></div>
+    </div>
+
+    <div id="rewardModal" class="modal">
+        <div class="modal-content">
+            <h3 id="modalTitle">新增奖励</h3>
+            <input type="hidden" id="editRewardId">
+            <div class="form-group">
+                <label>奖励名称 *</label>
+                <input type="text" id="rewardName" placeholder="如：看30分钟动画片">
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>所需积分 *</label>
+                    <input type="number" id="rewardPoints" min="1" placeholder="50">
+                </div>
+                <div class="form-group">
+                    <label>库存（留空不限）</label>
+                    <input type="number" id="rewardStock" min="1" placeholder="不限">
+                </div>
+            </div>
+            <div class="form-group">
+                <label>说明</label>
+                <textarea id="rewardDesc" rows="2" placeholder="奖励的描述，让孩子知道怎么用"></textarea>
+            </div>
+            <div class="modal-buttons">
+                <button onclick="hideRewardModal()" class="cancel-btn">取消</button>
+                <button onclick="saveReward()" class="btn btn-primary">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function showCreateModal() {
+            document.getElementById('modalTitle').textContent = '新增奖励';
+            document.getElementById('editRewardId').value = '';
+            document.getElementById('rewardName').value = '';
+            document.getElementById('rewardPoints').value = '';
+            document.getElementById('rewardStock').value = '';
+            document.getElementById('rewardDesc').value = '';
+            document.getElementById('rewardModal').style.display = 'flex';
+        }
+
+        function showEditModal(id) {
+            document.getElementById('modalTitle').textContent = '编辑奖励';
+            document.getElementById('editRewardId').value = id;
+            fetch('/parent/mall/rewards?page=0&size=1000')
+                .then(r => r.json())
+                .then(data => {
+                    const rewards = data.content;
+                    const r = rewards.find(x => x.id === id);
+                    if (r) {
+                        document.getElementById('rewardName').value = r.name;
+                        document.getElementById('rewardPoints').value = r.costPoints;
+                        document.getElementById('rewardStock').value = r.stock || '';
+                        document.getElementById('rewardDesc').value = r.description || '';
+                        document.getElementById('rewardModal').style.display = 'flex';
+                    }
+                });
+        }
+
+        function hideRewardModal() {
+            document.getElementById('rewardModal').style.display = 'none';
+        }
+
+        function saveReward() {
+            const id = document.getElementById('editRewardId').value;
+            const name = document.getElementById('rewardName').value.trim();
+            const costPoints = parseInt(document.getElementById('rewardPoints').value);
+            if (!name) { alert('请填写奖励名称'); return; }
+            if (!costPoints || costPoints < 1) { alert('积分必须大于 0'); return; }
+
+            const body = {
+                name: name,
+                costPoints: costPoints,
+                description: document.getElementById('rewardDesc').value.trim() || null,
+                stock: document.getElementById('rewardStock').value ? parseInt(document.getElementById('rewardStock').value) : null
+            };
+
+            const url = id ? '/parent/mall/rewards/' + id : '/parent/mall/rewards';
+            const method = id ? 'PUT' : 'POST';
+
+            fetch(url, { method: method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) { alert(data.message); location.reload(); }
+                    else { alert('操作失败'); }
+                });
+        }
+
+        function toggleStatus(id) {
+            if (!confirm('确定切换该奖励的上架状态？')) return;
+            fetch('/parent/mall/rewards/' + id + '/toggle', { method: 'PUT', headers: { 'Content-Type': 'application/json' } })
+                .then(r => r.json())
+                .then(data => { if (data.success) { alert(data.message); location.reload(); } });
+        }
+    </script>
+</body>
+</html>

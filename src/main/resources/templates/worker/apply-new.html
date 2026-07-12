@@ -53,19 +53,8 @@
                     <input type="text" name="name" required>
                 </div>
                 <div class="form-group">
-                    <label>任务类型</label>
-                    <select name="type" id="typeSelect" required>
-                        <option value="EARN">增加积分</option>
-                        <option value="CONSUME">消耗积分</option>
-                    </select>
-                </div>
-                <div class="form-group" id="earnFields">
                     <label>单价（每次完成可得积分）</label>
                     <input type="number" name="unitPrice" min="1" step="1">
-                </div>
-                <div class="form-group" id="consumeFields" style="display:none;">
-                    <label>消耗积分（每次消耗的积分数）</label>
-                    <input type="number" name="pointsToConsume" min="1" step="1">
                 </div>
                 <div class="form-group">
                     <label>重复方式</label>
@@ -91,12 +80,6 @@
     </div>
 
     <script>
-        document.getElementById('typeSelect').addEventListener('change', function() {
-            const isEarn = this.value === 'EARN';
-            document.getElementById('earnFields').style.display = isEarn ? 'block' : 'none';
-            document.getElementById('consumeFields').style.display = isEarn ? 'none' : 'block';
-        });
-
         document.getElementById('repeatTypeSelect').addEventListener('change', function() {
             document.getElementById('endDateGroup').style.display =
                 this.value === 'NONE' ? 'block' : 'none';
@@ -107,11 +90,9 @@
             const formData = new FormData(this);
             const data = {
                 name: formData.get('name'),
-                type: formData.get('type'),
                 unitPrice: formData.get('unitPrice') ? parseInt(formData.get('unitPrice')) : null,
                 repeatType: formData.get('repeatType'),
                 endDate: formData.get('endDate') || null,
-                pointsToConsume: formData.get('pointsToConsume') ? parseInt(formData.get('pointsToConsume')) : null,
                 remark: formData.get('remark')
             };
 

@@ -48,14 +48,8 @@ public class ApplicationService {
         if (request.getType() == null) {
             throw new BusinessException("INVALID_TYPE", "任务类型不能为空");
         }
-        if (request.getType() == ProjectType.EARN) {
-            if (request.getUnitPrice() == null || request.getUnitPrice().compareTo(BigDecimal.ZERO) <= 0) {
-                throw new BusinessException("INVALID_UNIT_PRICE", "单价必须大于0");
-            }
-        } else if (request.getType() == ProjectType.CONSUME) {
-            if (request.getPointsToConsume() == null || request.getPointsToConsume() <= 0) {
-                throw new BusinessException("INVALID_POINTS", "消耗积分必须大于0");
-            }
+        if (request.getUnitPrice() == null || request.getUnitPrice().compareTo(BigDecimal.ZERO) <= 0) {
+            throw new BusinessException("INVALID_UNIT_PRICE", "单价必须大于0");
         }
 
         // 防止重复提交待审核的提案
@@ -70,7 +64,6 @@ public class ApplicationService {
         application.setUnitPrice(request.getUnitPrice());
         application.setRepeatType(request.getRepeatType());
         application.setEndDate(request.getEndDate());
-        application.setPointsToConsume(request.getPointsToConsume());
         application.setRemark(request.getRemark());
         application.setStatus(ApplicationStatus.PENDING);
         applicationRepository.save(application);
@@ -117,7 +110,6 @@ public class ApplicationService {
         project.setUnitPrice(application.getUnitPrice());
         project.setRepeatType(application.getRepeatType());
         project.setEndDate(application.getEndDate());
-        project.setPointsToConsume(application.getPointsToConsume());
         project.setStatus(ProjectStatus.ACTIVE);
         project.setCreatedBy(application.getUser().getId());
         project = projectRepository.save(project);

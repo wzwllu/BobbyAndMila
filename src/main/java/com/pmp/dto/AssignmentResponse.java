@@ -16,7 +16,6 @@ public class AssignmentResponse {
     private String projectName;
     private ProjectType projectType;
     private BigDecimal unitPrice;
-    private Integer pointsToConsume;
     private RepeatType repeatType;
     private Long userId;
     private String userName;

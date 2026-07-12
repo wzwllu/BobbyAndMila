@@ -101,55 +101,6 @@ public class WorkerController {
     }
 
     /**
-     * 消耗积分任务页面（仅显示消耗积分类、进行中的分配）
-     */
-    @GetMapping("/consume")
-    public String consume(Authentication authentication, Model model,
-                          @RequestParam(defaultValue = "0") int page,
-                          @RequestParam(defaultValue = "10") int size) {
-        Long userId = getUserId(authentication);
-        List<AssignmentResponse> consumeAssignments = assignmentService.getUserAssignments(userId).stream()
-                .filter(a -> a.getStatus() == AssignmentStatus.ACTIVE && a.getProjectType() == ProjectType.CONSUME)
-                .collect(Collectors.toList());
-        model.addAttribute("assignments", consumeAssignments);
-
-        Map<Long, String> completionStatus = new HashMap<>();
-        for (AssignmentResponse a : consumeAssignments) {
-            if (a.getRepeatType() == RepeatType.DAILY) {
-                completionStatus.put(a.getId(), taskService.isCompletedToday(a.getId()) ? "completed" : "pending");
-            } else {
-                boolean hasDone = taskService.hasCompletionRecords(a.getId());
-                if (a.getEndDate() != null && a.getEndDate().isBefore(java.time.LocalDate.now()) && !hasDone) {
-                    completionStatus.put(a.getId(), "expired");
-                } else if (hasDone) {
-                    completionStatus.put(a.getId(), "completed");
-                } else {
-                    completionStatus.put(a.getId(), "pending");
-                }
-            }
-        }
-        model.addAttribute("completionStatus", completionStatus);
-        model.addAttribute("consumeTasks", taskService.getConsumeTasks(userId, PageRequest.of(page, size)));
-        return "worker/consume";
-    }
-
-    /**
-     * 提交消耗积分（审核）
-     */
-    @PostMapping("/consume/submit")
-    @ResponseBody
-    public Map<String, Object> submitConsume(@RequestBody PointsConsumeRequest request, Authentication authentication) {
-        Long userId = getUserId(authentication);
-        taskService.submitConsume(request, userId);
-
-        Map<String, Object> response = new HashMap<>();
-        response.put("success", true);
-        response.put("message", "消耗成功");
-        response.put("balance", taskService.getUserPointsBalance(userId));
-        return response;
-    }
-
-    /**
      * 申请任务页面（工人提交新任务提案）
      */
     @GetMapping("/apply")

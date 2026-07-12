@@ -56,6 +56,15 @@ data/*.db
 data/*.trace.db
 *.h2.db
 
+# Local runtime / generated files
+*.err
+classpath.txt
+start-app.bat
+start-app.ps1
+
+# AI / docs
+docs/
+
 # Temporary files
 *.tmp
 *.temp

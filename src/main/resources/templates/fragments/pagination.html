@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
-<body th:fragment="pagination(page, baseUrl, paramPrefix)">
+<body th:fragment="pagination(page, baseUrl, queryString)">
     <div class="pagination" th:if="${page.totalPages > 1}" style="display:flex;justify-content:space-between;align-items:center;padding:15px;flex-wrap:wrap;gap:10px;">
         <div class="pagination-info" style="color:#888;font-size:13px;">
             共 <span th:text="${page.totalElements}">0</span> 条，第 <span th:text="${page.number + 1}">1</span>/<span th:text="${page.totalPages}">1</span> 页
@@ -8,7 +8,7 @@
         <div class="pagination-controls" style="display:flex;align-items:center;gap:5px;">
             <span style="color:#888;font-size:13px;margin-right:8px;">每页</span>
             <select class="page-size-select" style="padding:4px 8px;border:1px solid #ddd;border-radius:4px;font-size:13px;margin-right:8px;"
-                    th:attr="data-base-url=${baseUrl}">
+                    th:attr="data-base-url=${baseUrl},data-query-string=${queryString}">
                 <option value="10" th:selected="${page.size == 10}">10</option>
                 <option value="50" th:selected="${page.size == 50}">50</option>
                 <option value="100" th:selected="${page.size == 100}">100</option>
@@ -16,20 +16,20 @@
             <span style="color:#888;font-size:13px;">条</span>
         </div>
         <div class="pagination-links" style="display:flex;align-items:center;gap:4px;">
-            <a th:if="${page.number > 0}" th:href="@{${baseUrl} + '?page=0&size=' + ${page.size}}"
+            <a th:if="${page.number > 0}" th:href="@{${baseUrl} + '?' + (${queryString} != null && ${#strings.length(queryString) > 0} ? ${queryString} + '&' : '') + 'page=0&size=' + ${page.size}}"
                style="padding:5px 10px;border:1px solid #ddd;border-radius:4px;text-decoration:none;color:#667eea;font-size:13px;">首页</a>
-            <a th:if="${page.number > 0}" th:href="@{${baseUrl} + '?page=' + ${page.number - 1} + '&size=' + ${page.size}}"
+            <a th:if="${page.number > 0}" th:href="@{${baseUrl} + '?' + (${queryString} != null && ${#strings.length(queryString) > 0} ? ${queryString} + '&' : '') + 'page=' + ${page.number - 1} + '&size=' + ${page.size}}"
                style="padding:5px 10px;border:1px solid #ddd;border-radius:4px;text-decoration:none;color:#667eea;font-size:13px;">上一页</a>
             <span th:each="i : ${#numbers.sequence(0, page.totalPages - 1)}">
                 <a th:if="${i >= page.number - 2 and i <= page.number + 2}"
-                   th:href="@{${baseUrl} + '?page=' + ${i} + '&size=' + ${page.size}}"
+                   th:href="@{${baseUrl} + '?' + (${queryString} != null && ${#strings.length(queryString) > 0} ? ${queryString} + '&' : '') + 'page=' + ${i} + '&size=' + ${page.size}}"
                    th:text="${i + 1}"
                    th:style="${i == page.number} ? 'padding:5px 10px;border:1px solid #667eea;border-radius:4px;text-decoration:none;background:#667eea;color:white;font-size:13px;' : 'padding:5px 10px;border:1px solid #ddd;border-radius:4px;text-decoration:none;color:#667eea;font-size:13px;'"
                    style="padding:5px 10px;border:1px solid #ddd;border-radius:4px;text-decoration:none;color:#667eea;font-size:13px;">1</a>
             </span>
-            <a th:if="${page.number < page.totalPages - 1}" th:href="@{${baseUrl} + '?page=' + ${page.number + 1} + '&size=' + ${page.size}}"
+            <a th:if="${page.number < page.totalPages - 1}" th:href="@{${baseUrl} + '?' + (${queryString} != null && ${#strings.length(queryString) > 0} ? ${queryString} + '&' : '') + 'page=' + ${page.number + 1} + '&size=' + ${page.size}}"
                style="padding:5px 10px;border:1px solid #ddd;border-radius:4px;text-decoration:none;color:#667eea;font-size:13px;">下一页</a>
-            <a th:if="${page.number < page.totalPages - 1}" th:href="@{${baseUrl} + '?page=' + ${page.totalPages - 1} + '&size=' + ${page.size}}"
+            <a th:if="${page.number < page.totalPages - 1}" th:href="@{${baseUrl} + '?' + (${queryString} != null && ${#strings.length(queryString) > 0} ? ${queryString} + '&' : '') + 'page=' + ${page.totalPages - 1} + '&size=' + ${page.size}}"
                style="padding:5px 10px;border:1px solid #ddd;border-radius:4px;text-decoration:none;color:#667eea;font-size:13px;">末页</a>
         </div>
     </div>
@@ -37,8 +37,9 @@
         document.addEventListener('change', function(e) {
             if (e.target && e.target.classList.contains('page-size-select')) {
                 var baseUrl = e.target.getAttribute('data-base-url');
+                var qs = e.target.getAttribute('data-query-string') || '';
                 if (baseUrl) {
-                    window.location.href = baseUrl + '?page=0&size=' + e.target.value;
+                    window.location.href = baseUrl + '?' + (qs ? qs + '&' : '') + 'page=0&size=' + e.target.value;
                 }
             }
         });

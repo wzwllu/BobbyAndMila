@@ -18,7 +18,6 @@ public class ProjectResponse {
     private BigDecimal unitPrice;
     private RepeatType repeatType;
     private LocalDate endDate;
-    private Integer pointsToConsume;
     private Long createdBy;
     private LocalDateTime createdAt;
 }

@@ -35,26 +35,16 @@ public class ProjectService {
      */
     @Transactional
     public ProjectResponse createProject(ProjectRequest request, Long createdBy) {
-        if (request.getType() == null) {
-            throw new BusinessException("INVALID_TYPE", "任务类型不能为空");
-        }
-        if (request.getType() == ProjectType.EARN) {
-            if (request.getUnitPrice() == null || request.getUnitPrice().compareTo(BigDecimal.ZERO) <= 0) {
-                throw new BusinessException("INVALID_UNIT_PRICE", "单价必须大于0");
-            }
-        } else if (request.getType() == ProjectType.CONSUME) {
-            if (request.getPointsToConsume() == null || request.getPointsToConsume() <= 0) {
-                throw new BusinessException("INVALID_POINTS", "消耗积分必须大于0");
-            }
+        if (request.getUnitPrice() == null || request.getUnitPrice().compareTo(BigDecimal.ZERO) <= 0) {
+            throw new BusinessException("INVALID_UNIT_PRICE", "单价必须大于0");
         }
 
         Project project = new Project();
         project.setName(request.getName());
-        project.setType(request.getType());
+        project.setType(ProjectType.EARN);
         project.setUnitPrice(request.getUnitPrice());
         project.setRepeatType(request.getRepeatType());
         project.setEndDate(request.getEndDate());
-        project.setPointsToConsume(request.getPointsToConsume());
         project.setStatus(ProjectStatus.ACTIVE);
         project.setCreatedBy(createdBy);
 
@@ -113,7 +103,6 @@ public class ProjectService {
         response.setUnitPrice(project.getUnitPrice());
         response.setRepeatType(project.getRepeatType());
         response.setEndDate(project.getEndDate());
-        response.setPointsToConsume(project.getPointsToConsume());
         response.setCreatedBy(project.getCreatedBy());
         response.setCreatedAt(project.getCreatedAt());
         return response;

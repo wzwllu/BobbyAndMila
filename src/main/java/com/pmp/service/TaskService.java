@@ -2,7 +2,6 @@ package com.pmp.service;
 
 import com.pmp.dto.PointsAdjustRequest;
 import com.pmp.dto.PointsAdjustResponse;
-import com.pmp.dto.PointsConsumeRequest;
 import com.pmp.dto.TaskCompleteRequest;
 import com.pmp.entity.TaskExecution;
 import com.pmp.entity.ProjectAssignment;
@@ -79,59 +78,6 @@ public class TaskService {
     }
 
     /**
-     * 提交消耗积分（直接扣除，无需审核）
-     */
-    @Transactional
-    public void submitConsume(PointsConsumeRequest request, Long userId) {
-        if (request.getQuantity() == null || request.getQuantity() <= 0) {
-            throw new BusinessException("INVALID_QUANTITY", "数量必须为正数");
-        }
-
-        // 必须对该消耗类项目存在激活中的分配
-        ProjectAssignment assignment = assignmentRepository.findByUser_IdAndProject_Id(userId, request.getProjectId())
-                .orElseThrow(() -> new BusinessException("ASSIGNMENT_NOT_FOUND", "未找到该项目的有效分配，请先申请并通过审核"));
-
-        // 计算消耗积分（按单价×数量）
-        Integer unitPoints = assignment.getProject().getPointsToConsume();
-        if (unitPoints == null || unitPoints <= 0) {
-            throw new BusinessException("INVALID_POINTS", "任务消耗积分未设置或无效");
-        }
-        Integer points = unitPoints * request.getQuantity();
-
-        // 检查余额是否充足
-        Long balance = getUserPointsBalance(userId);
-        if (balance < points) {
-            throw new BusinessException("INSUFFICIENT_BALANCE", "积分余额不足，当前余额: " + balance + "，需要: " + points);
-        }
-
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new BusinessException("USER_NOT_FOUND", "用户不存在"));
-
-        // 直接创建积分交易记录（立即扣除）
-        PointsTransaction transaction = new PointsTransaction();
-        transaction.setUser(user);
-        transaction.setAssignment(assignment);
-        transaction.setAmount(points);
-        transaction.setType(TransactionType.CONSUME);
-        transaction.setDescription("消耗积分: " + assignment.getProject().getName());
-        transaction.setCreatedAt(LocalDateTime.now());
-        pointsTransactionRepository.save(transaction);
-
-        // 创建已通过的任务执行记录（留作历史）
-        TaskExecution taskExecution = new TaskExecution();
-        taskExecution.setAssignment(assignment);
-        taskExecution.setType(TransactionType.CONSUME);
-        taskExecution.setExecutionDate(LocalDate.now());
-        taskExecution.setQuantity(request.getQuantity());
-        taskExecution.setPoints(points);
-        taskExecution.setRemark(request.getRemark());
-        taskExecution.setStatus(TaskExecutionStatus.APPROVED);
-        taskExecution.setReviewedAt(LocalDateTime.now());
-        taskExecution.setCreatedAt(LocalDateTime.now());
-        taskExecutionRepository.save(taskExecution);
-    }
-
-    /**
      * 审核任务执行记录（通过则入账，拒绝则不入账）
      */
     @Transactional
@@ -198,17 +144,6 @@ public class TaskService {
 
     public Page<TaskExecution> getEarnTasks(Long userId, Pageable pageable) {
         return taskExecutionRepository.findByAssignment_User_IdAndTypeOrderByExecutionDateDesc(userId, TransactionType.EARN, pageable);
-    }
-
-    /**
-     * 获取用户的消耗类任务记录
-     */
-    public List<TaskExecution> getConsumeTasks(Long userId) {
-        return taskExecutionRepository.findByAssignment_User_IdAndTypeOrderByExecutionDateDesc(userId, TransactionType.CONSUME);
-    }
-
-    public Page<TaskExecution> getConsumeTasks(Long userId, Pageable pageable) {
-        return taskExecutionRepository.findByAssignment_User_IdAndTypeOrderByExecutionDateDesc(userId, TransactionType.CONSUME, pageable);
     }
 
     /**

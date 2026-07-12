@@ -8,21 +8,44 @@
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f5f6fa; }
         .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px 30px; display: flex; justify-content: space-between; align-items: center; }
-        .nav-links a { color: white; text-decoration: none; margin-left: 20px; font-size: 14px; }
+        .header h1 { font-size: 22px; }
+        .header a { color: white; text-decoration: none; margin-left: 20px; font-size: 14px; }
         .container { max-width: 1200px; margin: 30px auto; padding: 0 20px; }
         .section { background: white; border-radius: 10px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        .section h3 { color: #667eea; margin-bottom: 15px; }
+        .section h3 { color: #667eea; margin-bottom: 15px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
         table { width: 100%; border-collapse: collapse; }
-        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #e0e0e0; }
-        th { background: #f8f9fa; color: #555; font-weight: 500; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #e0e0e0; font-size: 14px; }
+        th { background: #f8f9fa; color: #555; font-weight: 600; }
         tr:hover { background: #f8f9fa; }
         .btn { padding: 6px 14px; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 13px; }
         .btn-approve { background: #27ae60; }
         .btn-reject { background: #e74c3c; }
+        .btn-verify { background: #27ae60; color: white; }
+        .btn-primary { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
         .tag-earn { background: #e8f5e9; color: #27ae60; padding: 3px 10px; border-radius: 10px; font-size: 12px; }
-        .tag-consume { background: #fdecea; color: #e74c3c; padding: 3px 10px; border-radius: 10px; font-size: 12px; }
         .empty-message { text-align: center; color: #999; padding: 20px; }
         .badge { background: #e74c3c; color: white; border-radius: 10px; padding: 1px 7px; font-size: 12px; margin-left: 6px; }
+        .pending-badge { background: #f39c12; color: white; padding: 2px 8px; border-radius: 12px; font-size: 12px; }
+        .filter-bar { display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap; margin-bottom: 15px; padding: 12px; background: #f8f9fa; border-radius: 8px; }
+        .filter-bar .filter-group { display: flex; flex-direction: column; gap: 3px; }
+        .filter-bar .filter-group label { font-size: 12px; color: #888; }
+        .filter-bar input, .filter-bar select { padding: 6px 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; }
+        .action-group { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+        .reject-input { width: 120px; padding: 4px 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px; }
+        .status-pending { color: #f39c12; font-weight: 500; }
+        .status-approved { color: #27ae60; font-weight: 500; }
+        .status-rejected { color: #e74c3c; font-weight: 500; }
+        @media (max-width: 768px) {
+            .header { flex-direction: column; gap: 8px; padding: 15px; text-align: center; }
+            .header h1 { font-size: 18px; }
+            .container { margin: 15px auto; padding: 0 12px; }
+            .section { padding: 12px; overflow-x: auto; }
+            table { font-size: 12px; min-width: 600px; }
+            th, td { padding: 8px 6px; }
+            .filter-bar { flex-direction: column; align-items: stretch; }
+            .filter-bar .filter-group { width: 100%; }
+            .btn { padding: 5px 10px; font-size: 12px; }
+        }
     </style>
 </head>
 <body>
@@ -58,9 +81,8 @@
                         <td th:text="${app.projectName}"></td>
                         <td>
                             <span th:if="${app.projectType.name() == 'EARN'}" class="tag-earn" th:text="${app.projectType.label}">增加积分</span>
-                            <span th:if="${app.projectType.name() == 'CONSUME'}" class="tag-consume" th:text="${app.projectType.label}">消耗积分</span>
                         </td>
-                        <td th:text="${app.projectType.name() == 'EARN' ? (app.unitPrice != null ? '每单位 ' + app.unitPrice + ' 积分' : '') : (app.pointsToConsume != null ? '固定消耗 ' + app.pointsToConsume + ' 积分' : '')}"></td>
+                        <td th:text="${app.projectType.name() == 'EARN' ? (app.unitPrice != null ? '每单位 ' + app.unitPrice + ' 积分' : '') : ''}"></td>
                         <td th:text="${app.repeatType != null ? app.repeatType.label : ''}"></td>
                         <td th:text="${app.user.username}"></td>
                         <td th:text="${#temporals.format(app.createdAt, 'yyyy-MM-dd HH:mm')}"></td>
@@ -99,7 +121,6 @@
                         <td th:text="${task.assignment.user.username}"></td>
                         <td>
                             <span th:if="${task.type.name() == 'EARN'}" class="tag-earn" th:text="${task.type.label}">赚取</span>
-                            <span th:if="${task.type.name() == 'CONSUME'}" class="tag-consume" th:text="${task.type.label}">消耗</span>
                         </td>
                         <td th:text="${task.points}"></td>
                         <td th:text="${task.quantity}"></td>
@@ -113,6 +134,69 @@
                 </tbody>
             </table>
             <div th:replace="fragments/pagination :: pagination(${pendingTasks}, '/admin/reviews', '')"></div>
+        </div>
+
+        <div class="section">
+            <h3>
+                🎯 核销审核
+                <span class="pending-badge" th:text="${#lists.size(pendingRedemptions)}">0</span>
+                <span style="flex:1;"></span>
+                <button class="btn btn-primary" id="batchVerifyBtn" onclick="batchVerify()" style="display:none;">批量核销</button>
+            </h3>
+            <div id="batchBar" class="batch-bar" style="display:none;margin-bottom:12px;background:#e8f5e9;padding:10px 16px;border-radius:8px;align-items:center;gap:12px;flex-wrap:wrap;">
+                <span>已选择 <span class="count" id="selectedCount" style="color:#2e7d32;font-weight:600;font-size:14px;">0</span> 项</span>
+                <button class="btn btn-approve" onclick="selectAllRedemptions()" style="padding:6px 14px;color:white;border:none;border-radius:5px;cursor:pointer;font-size:13px;background:#27ae60;">全选</button>
+                <button class="btn" onclick="deselectAllRedemptions()" style="padding:6px 14px;color:#555;border:none;border-radius:5px;cursor:pointer;font-size:13px;background:#e0e0e0;">取消全选</button>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width:40px;text-align:center;"><input type="checkbox" id="checkAll" onchange="toggleCheckAll()" style="width:18px;height:18px;cursor:pointer;"></th>
+                        <th>孩子</th>
+                        <th>奖励</th>
+                        <th>消耗积分</th>
+                        <th>数量</th>
+                        <th>使用时间</th>
+                        <th>备注</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:if="${pendingRedemptions.isEmpty()}">
+                        <td colspan="8" class="empty-message">暂无待核销的兑换</td>
+                    </tr>
+                    <tr th:each="r : ${pendingRedemptions}">
+                        <td style="text-align:center;"><input type="checkbox" class="redemption-check" th:value="${r.id}" onchange="updateBatchBar()" style="width:18px;height:18px;cursor:pointer;"></td>
+                        <td th:text="${r.userName}"></td>
+                        <td th:text="${r.rewardName}"></td>
+                        <td th:text="${r.totalPoints}"></td>
+                        <td th:text="${r.quantity}"></td>
+                        <td th:text="${r.usedAt != null ? #temporals.format(r.usedAt, 'MM-dd HH:mm') : '-'}"></td>
+                        <td th:text="${r.remark}"></td>
+                        <td>
+                            <div class="action-group">
+                                <button class="btn btn-verify" th:attr="onclick='showReviewModal(' + ${r.id} + ', `' + ${r.rewardName} + '`, true)'">核销</button>
+                                <button class="btn btn-reject" th:attr="onclick='showReviewModal(' + ${r.id} + ', `' + ${r.rewardName} + '`, false)'">拒绝</button>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="reviewModal" class="modal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.45);z-index:1000;justify-content:center;align-items:center;">
+        <div class="modal-content" style="background:white;padding:28px;border-radius:10px;width:100%;max-width:450px;margin:0 16px;">
+            <h3 id="modalTitle" style="margin-bottom:8px;">核销确认</h3>
+            <p id="modalReward" style="color:#666;margin-bottom:16px;font-size:15px;"></p>
+            <div class="form-group">
+                <label style="display:block;font-size:14px;color:#555;margin-bottom:4px;font-weight:500;">审核备注</label>
+                <textarea id="modalRemark" rows="3" style="width:100%;padding:10px 12px;border:2px solid #e0e0e0;border-radius:5px;font-family:inherit;font-size:14px;resize:vertical;" placeholder="填写审核备注（可选）"></textarea>
+            </div>
+            <div class="modal-buttons" style="display:flex;justify-content:flex-end;gap:10px;margin-top:20px;">
+                <button onclick="hideReviewModal()" class="cancel-btn" style="background:#e0e0e0;color:#555;padding:8px 20px;border:none;border-radius:5px;cursor:pointer;font-size:14px;">取消</button>
+                <button id="modalConfirmBtn" onclick="confirmReview()" class="btn btn-approve" style="padding:8px 20px;border:none;border-radius:5px;cursor:pointer;font-size:14px;color:white;">确认核销</button>
+            </div>
         </div>
     </div>
 
@@ -130,6 +214,95 @@
         function rejectApplication(btn) { postAndReload('/admin/reviews/application/' + btn.getAttribute('data-id') + '/reject'); }
         function approveTask(btn) { postAndReload('/admin/reviews/task/' + btn.getAttribute('data-id') + '/approve'); }
         function rejectTask(btn) { postAndReload('/admin/reviews/task/' + btn.getAttribute('data-id') + '/reject'); }
+
+        var currentRedemptionId = null;
+        var currentAction = null;
+
+        function showReviewModal(id, rewardName, isApprove) {
+            currentRedemptionId = id;
+            currentAction = isApprove ? 'verify' : 'reject';
+            document.getElementById('modalReward').textContent = '奖励: ' + rewardName;
+            document.getElementById('modalRemark').value = '';
+            if (isApprove) {
+                document.getElementById('modalTitle').textContent = '确认核销';
+                document.getElementById('modalConfirmBtn').textContent = '确认核销';
+                document.getElementById('modalConfirmBtn').className = 'btn btn-approve';
+                document.getElementById('modalConfirmBtn').style.cssText = 'padding:8px 20px;border:none;border-radius:5px;cursor:pointer;font-size:14px;color:white;background:#27ae60;';
+            } else {
+                document.getElementById('modalTitle').textContent = '拒绝核销';
+                document.getElementById('modalConfirmBtn').textContent = '确认拒绝';
+                document.getElementById('modalConfirmBtn').className = 'btn btn-reject';
+                document.getElementById('modalConfirmBtn').style.cssText = 'padding:8px 20px;border:none;border-radius:5px;cursor:pointer;font-size:14px;color:white;background:#e74c3c;';
+            }
+            document.getElementById('reviewModal').style.display = 'flex';
+        }
+
+        function hideReviewModal() {
+            document.getElementById('reviewModal').style.display = 'none';
+            currentRedemptionId = null;
+            currentAction = null;
+        }
+
+        function confirmReview() {
+            var remark = document.getElementById('modalRemark').value.trim() || null;
+            var url = '/admin/redemptions/' + currentRedemptionId + '/' + currentAction;
+            fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ reviewRemark: remark })
+            }).then(function(r) { return r.json(); }).then(function(data) {
+                if (data.success) { alert(data.message); location.reload(); }
+                else { alert('操作失败'); }
+            }).catch(function() { alert('网络错误'); });
+        }
+
+        function updateBatchBar() {
+            var checks = document.querySelectorAll('.redemption-check:checked');
+            var bar = document.getElementById('batchBar');
+            var btn = document.getElementById('batchVerifyBtn');
+            var count = document.getElementById('selectedCount');
+            count.textContent = checks.length;
+            if (checks.length > 0) {
+                bar.style.display = 'flex';
+                btn.style.display = 'inline-block';
+            } else {
+                bar.style.display = 'none';
+                btn.style.display = 'none';
+            }
+        }
+
+        function toggleCheckAll() {
+            var checked = document.getElementById('checkAll').checked;
+            document.querySelectorAll('.redemption-check').forEach(function(c) { c.checked = checked; });
+            updateBatchBar();
+        }
+
+        function selectAllRedemptions() {
+            document.querySelectorAll('.redemption-check').forEach(function(c) { c.checked = true; });
+            document.getElementById('checkAll').checked = true;
+            updateBatchBar();
+        }
+
+        function deselectAllRedemptions() {
+            document.querySelectorAll('.redemption-check').forEach(function(c) { c.checked = false; });
+            document.getElementById('checkAll').checked = false;
+            updateBatchBar();
+        }
+
+        function batchVerify() {
+            var ids = [];
+            document.querySelectorAll('.redemption-check:checked').forEach(function(c) { ids.push(parseInt(c.value)); });
+            if (ids.length === 0) { alert('请选择要核销的项'); return; }
+            if (!confirm('确定批量核销 ' + ids.length + ' 项兑换？')) return;
+            fetch('/admin/redemptions/batch-verify', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ids: ids })
+            }).then(function(r) { return r.json(); }).then(function(data) {
+                if (data.success) { alert(data.message); location.reload(); }
+                else { alert('操作失败'); }
+            });
+        }
     </script>
 </body>
 </html>

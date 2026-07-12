@@ -14,6 +14,5 @@ public class ApplyRequest {
     private BigDecimal unitPrice;
     private RepeatType repeatType;
     private LocalDate endDate;
-    private Integer pointsToConsume;
     private String remark;
 }

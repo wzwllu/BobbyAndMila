@@ -1,6 +1,7 @@
 package com.pmp.controller;
 
 import com.pmp.dto.*;
+import com.pmp.dto.redemption.BatchVerifyRequest;
 import com.pmp.entity.TaskExecution;
 import com.pmp.service.*;
 import lombok.RequiredArgsConstructor;
@@ -33,6 +34,7 @@ public class AdminController {
     private final UserService userService;
     private final TaskService taskService;
     private final ApplicationService applicationService;
+    private final RedemptionService redemptionService;
 
     private Long getUserId(Authentication authentication) {
         String username = authentication.getName();
@@ -252,6 +254,37 @@ public class AdminController {
         assignmentService.cancelAssignment(id);
     }
 
+    @PostMapping("/redemptions/{id}/verify")
+    @ResponseBody
+    public Map<String, Object> verifyRedemption(@PathVariable Long id,
+                                                @RequestBody(required = false) Map<String, String> body,
+                                                Authentication authentication) {
+        Long userId = getUserId(authentication);
+        String remark = body != null ? body.get("reviewRemark") : null;
+        redemptionService.verifyRedemption(id, userId, remark);
+        return success("核销成功，积分已扣除");
+    }
+
+    @PostMapping("/redemptions/{id}/reject")
+    @ResponseBody
+    public Map<String, Object> rejectRedemption(@PathVariable Long id,
+                                                @RequestBody(required = false) Map<String, String> body,
+                                                Authentication authentication) {
+        Long userId = getUserId(authentication);
+        String remark = body != null ? body.get("reviewRemark") : null;
+        redemptionService.rejectRedemption(id, userId, remark);
+        return success("兑换已拒绝");
+    }
+
+    @PostMapping("/redemptions/batch-verify")
+    @ResponseBody
+    public Map<String, Object> batchVerify(@RequestBody BatchVerifyRequest request,
+                                           Authentication authentication) {
+        Long userId = getUserId(authentication);
+        redemptionService.batchVerify(request.getIds(), userId, request.getReviewRemark());
+        return success("批量核销完成，共处理 " + request.getIds().size() + " 条记录");
+    }
+
     /**
      * 审核页面
      */
@@ -261,6 +294,7 @@ public class AdminController {
                           @RequestParam(defaultValue = "10") int size) {
         model.addAttribute("pendingApplications", applicationService.listPending(PageRequest.of(page, size)));
         model.addAttribute("pendingTasks", taskService.getPendingTasks(PageRequest.of(page, size)));
+        model.addAttribute("pendingRedemptions", redemptionService.getPendingRedemptions());
         return "admin/reviews";
     }
 

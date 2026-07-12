@@ -42,9 +42,6 @@ public class Project {
     @Column(name = "end_date")
     private LocalDate endDate;
     
-    @Column(name = "points_to_consume")
-    private Integer pointsToConsume;
-    
     @Column(name = "created_by")
     private Long createdBy;
     

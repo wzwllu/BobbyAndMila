@@ -36,9 +36,6 @@ public class Application {
     @Column(name = "unit_price", scale = 2)
     private BigDecimal unitPrice;
 
-    @Column(name = "points_to_consume")
-    private Integer pointsToConsume;
-
     @Enumerated(EnumType.STRING)
     @Column(name = "repeat_type")
     private RepeatType repeatType;

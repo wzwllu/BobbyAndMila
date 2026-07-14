@@ -3,11 +3,11 @@ spring:
     url: jdbc:h2:file:./data/pmp;DB_CLOSE_ON_EXIT=FALSE
     driver-class-name: org.h2.Driver
     username: sa
-    password:
+    password: 1qaz@WSX
   jpa:
     hibernate:
       ddl-auto: update
-    show-sql: true
+    show-sql: false
     properties:
       hibernate:
         dialect: org.hibernate.dialect.H2Dialect
@@ -21,6 +21,11 @@ spring:
 
 server:
   port: 9082
+  ssl:
+    enabled: true
+    key-store: file:/opt/wzw/cert/sql2mongo.com.jks
+    key-store-password: 1m7f26zc68wel95
+    key-store-type: JKS
 
 logging:
   level:

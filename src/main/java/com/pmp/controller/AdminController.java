@@ -7,6 +7,7 @@ import com.pmp.service.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -56,7 +57,7 @@ public class AdminController {
     public String projects(Model model,
                            @RequestParam(defaultValue = "0") int page,
                            @RequestParam(defaultValue = "10") int size) {
-        model.addAttribute("projects", projectService.getAllProjects(PageRequest.of(page, size)));
+        model.addAttribute("projects", projectService.getAllProjects(PageRequest.of(page, size, Sort.by(Sort.Direction.ASC, "status"))));
         return "admin/projects";
     }
 
@@ -230,7 +231,7 @@ public class AdminController {
                               @RequestParam(defaultValue = "0") int page,
                               @RequestParam(defaultValue = "10") int size) {
         model.addAttribute("assignments", assignmentService.getAllAssignments(PageRequest.of(page, size)));
-        model.addAttribute("projects", projectService.getAllProjects());
+        model.addAttribute("projects", projectService.getActiveProjects());
         model.addAttribute("users", userService.getAllUsers());
         return "admin/assignments";
     }

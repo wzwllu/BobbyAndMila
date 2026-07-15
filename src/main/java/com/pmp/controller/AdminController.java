@@ -51,14 +51,25 @@ public class AdminController {
     }
 
     /**
-     * 任务管理页面
+     * 任务管理页面（仅显示启用中的任务）
      */
     @GetMapping("/projects")
     public String projects(Model model,
                            @RequestParam(defaultValue = "0") int page,
                            @RequestParam(defaultValue = "10") int size) {
-        model.addAttribute("projects", projectService.getAllProjects(PageRequest.of(page, size, Sort.by(Sort.Direction.ASC, "status"))));
+        model.addAttribute("projects", projectService.getActiveProjects(PageRequest.of(page, size, Sort.by(Sort.Direction.ASC, "status"))));
         return "admin/projects";
+    }
+
+    /**
+     * 已废弃任务页面
+     */
+    @GetMapping("/projects/deprecated")
+    public String deprecatedProjects(Model model,
+                                     @RequestParam(defaultValue = "0") int page,
+                                     @RequestParam(defaultValue = "10") int size) {
+        model.addAttribute("projects", projectService.getDeprecatedProjects(PageRequest.of(page, size, Sort.by(Sort.Direction.ASC, "id"))));
+        return "admin/projects-deprecated";
     }
 
     /**
@@ -224,16 +235,27 @@ public class AdminController {
     }
 
     /**
-     * 项目分配页面
+     * 项目分配页面（仅显示未取消的分配）
      */
     @GetMapping("/assignments")
     public String assignments(Model model,
                               @RequestParam(defaultValue = "0") int page,
                               @RequestParam(defaultValue = "10") int size) {
-        model.addAttribute("assignments", assignmentService.getAllAssignments(PageRequest.of(page, size)));
+        model.addAttribute("assignments", assignmentService.getActiveAssignments(PageRequest.of(page, size)));
         model.addAttribute("projects", projectService.getActiveProjects());
         model.addAttribute("users", userService.getAllUsers());
         return "admin/assignments";
+    }
+
+    /**
+     * 已取消分配页面
+     */
+    @GetMapping("/assignments/cancelled")
+    public String cancelledAssignments(Model model,
+                                       @RequestParam(defaultValue = "0") int page,
+                                       @RequestParam(defaultValue = "10") int size) {
+        model.addAttribute("assignments", assignmentService.getCancelledAssignments(PageRequest.of(page, size)));
+        return "admin/assignments-cancelled";
     }
 
     /**

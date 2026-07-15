@@ -163,7 +163,10 @@
     <div class="container">
         <div class="page-header">
             <h2>任务列表</h2>
-            <button class="btn" onclick="showModal()">创建任务</button>
+            <div>
+                <button class="btn" onclick="window.location.href='/admin/projects/deprecated'" style="margin-right:10px;background:linear-gradient(135deg,#95a5a6 0%,#7f8c8d 100%);">废弃任务</button>
+                <button class="btn" onclick="showModal()">创建任务</button>
+            </div>
         </div>
 
         <div class="table-container">
@@ -194,7 +197,7 @@
                 </tr>
             </tbody>
             </table>
-            <div th:replace="fragments/pagination :: pagination(${projects}, '/admin/projects', '')"></div>
+            <div th:replace="fragments/pagination :: pagination(${projects}, '/admin/projects')"></div>
         </div>
     </div>
 

@@ -3,6 +3,9 @@ package com.pmp.repository;
 import com.pmp.entity.Project;
 import com.pmp.entity.ProjectAssignment;
 import com.pmp.entity.User;
+import com.pmp.enumeration.AssignmentStatus;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -63,4 +66,14 @@ public interface AssignmentRepository extends JpaRepository<ProjectAssignment, L
      * 判断用户是否存在指定项目的活跃分配
      */
     boolean existsByUser_IdAndProject_IdAndStatus(Long userId, Long projectId, com.pmp.enumeration.AssignmentStatus status);
+
+    /**
+     * 按状态分页查询
+     */
+    Page<ProjectAssignment> findByStatus(AssignmentStatus status, Pageable pageable);
+
+    /**
+     * 按状态排除分页查询（未取消的分配列表用）
+     */
+    Page<ProjectAssignment> findByStatusNot(AssignmentStatus status, Pageable pageable);
 }

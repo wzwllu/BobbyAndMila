@@ -81,6 +81,20 @@ public class AssignmentService {
     }
 
     /**
+     * 获取未取消的分配（分页，管理端分配列表用）
+     */
+    public Page<AssignmentResponse> getActiveAssignments(Pageable pageable) {
+        return assignmentRepository.findByStatusNot(AssignmentStatus.CANCELLED, pageable).map(this::convertToResponse);
+    }
+
+    /**
+     * 获取已取消的分配（分页）
+     */
+    public Page<AssignmentResponse> getCancelledAssignments(Pageable pageable) {
+        return assignmentRepository.findByStatus(AssignmentStatus.CANCELLED, pageable).map(this::convertToResponse);
+    }
+
+    /**
      * 取消分配
      */
     @Transactional

@@ -66,12 +66,26 @@ public class ProjectService {
     }
 
     /**
+     * 获取启用中的项目（分页，管理端任务列表用）
+     */
+    public Page<ProjectResponse> getActiveProjects(Pageable pageable) {
+        return projectRepository.findByStatusOrderByStatusAsc(ProjectStatus.ACTIVE, pageable).map(this::convertToResponse);
+    }
+
+    /**
      * 获取启用中的项目（工人申请页、分配下拉用）
      */
     public List<ProjectResponse> getActiveProjects() {
         return projectRepository.findByStatus(ProjectStatus.ACTIVE).stream()
                 .map(this::convertToResponse)
                 .collect(Collectors.toList());
+    }
+
+    /**
+     * 获取已废弃的项目（分页）
+     */
+    public Page<ProjectResponse> getDeprecatedProjects(Pageable pageable) {
+        return projectRepository.findByStatusOrderByStatusAsc(ProjectStatus.DEPRECATED, pageable).map(this::convertToResponse);
     }
 
     /**
